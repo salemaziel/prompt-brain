@@ -6,17 +6,24 @@ things: how far to strip source-specific accommodations, how to phrase **What ->
 as source -> target, and how to stay honest about what the guides do *not* say. Quotes from
 the guides stay in their original German; everything else is framing text.
 
+**Contents**
+- Example — `claude-opus-4-8` -> `claude-fable-5` (agent system prompt): invocation and source prompt
+- The Migrated Prompt (section 1)
+- The Migration Changelog (section 2): Reasoning & sampling config; Prefill & output contract; Scaffolding -> goal + behavior sections; Runtime & failure handling (new for the target); Left unchanged, deliberately; Guide gaps; Guide-Stand footer
+
 ---
 
 ## Example — `claude-opus-4-8` -> `claude-fable-5` (agent system prompt)
 
 An agent spec that was carried forward onto Opus 4.8 from an older Claude and still drags
-along legacy API config, an assistant prefill, and a rigid step list.
+along legacy API config, an assistant prefill, and a rigid step list. The target is named
+with the version-pinned alias `fable-5`; the bare `fable` would resolve to `claude-fable-5-1`
+instead.
 
 **Invocation**
 
 ```
-/prompt-brain:migrate-prompt opus-4.8 fable # Dependency Upgrade Agent
+/prompt-brain:migrate-prompt opus-4.8 fable-5 # Dependency Upgrade Agent
 
 API config:
   model: claude-opus-4-8
@@ -55,7 +62,7 @@ Begin with Step 1.
 ```
 
 **Resolution** (Step 1, before any file read): `opus-4.8` -> `claude-opus-4-8`,
-`fable` -> `claude-fable-5`. Two guides loaded, nothing else.
+`fable-5` -> `claude-fable-5`. Two guides loaded, nothing else.
 
 ---
 
@@ -68,12 +75,11 @@ API config:
   model: claude-fable-5
   output_config:
     effort: "xhigh"        # sweep medium/low for routine upgrade runs
-    format: json schema for ./upgrade/report.md (replaces the removed prefill)
-  fallbacks: ["claude-opus-4-8"]   # beta header: server-side-fallback-2026-06-01
-  # no `thinking` key at all — thinking is always on
-  # workspace must allow 30-day retention (ZDR is rejected with 400)
-  # stream the run; single turns can take minutes at this effort
-  # check `stop_reason == "refusal"` before reading `content[0]`
+  fallbacks: [{"model": "claude-opus-4-8"}]   # beta, Claude API only: server-side-fallback-2026-07-01
+  # no `thinking` key — thinking is adaptive and always on
+  # org needs 30-day retention: no ZDR without Anthropic's authorization (400 otherwise)
+  # stream the run; single turns can take many minutes at this effort
+  # check `stop_reason == "refusal"` before reading `content`
 
 You are an agent that upgrades the pinned dependencies of this monorepo.
 
@@ -82,7 +88,8 @@ Bring the pinned dependencies up to their current stable releases, applied in gr
 (patch, then minor, then major), with the test suite green after each applied group.
 
 ## Deliverables
-- `./upgrade/inventory.md` — the current pinned version of every workspace package.
+- `./upgrade/inventory.md` — the current pinned version of every workspace package. Start
+  with this inventory.
 - `./upgrade/report.md` — per group: what was upgraded, the test result, and every
   major-version bump called out explicitly.
 
@@ -119,76 +126,83 @@ Bring the pinned dependencies up to their current stable releases, applied in gr
 
 ### Reasoning & sampling config
 - **Removed `thinking: {type: "enabled", budget_tokens: 12000}`** -> on Fable 5 thinking is
-  always on and the key must be absent entirely: „ein expliziter `{type: "disabled"}` liefert
-  400, ebenso `{type: "enabled", budget_tokens: N}`". The source guide already lists this
-  form as removed on Opus 4.8, so it was dead config before the migration too.
-- **Removed `temperature: 0.2`** -> `temperature`/`top_p`/`top_k` are removed on both models
-  (400); depth and determinism are steered through the prompt plus `effort`.
+  adaptive and always on: „`thinking` weglassen oder `{type: "adaptive"}` senden;
+  `{type: "disabled"}` und `{type: "enabled", budget_tokens: N}` liefern beide 400". The
+  source guide already gives 400 for this form on Opus 4.8, so it was dead config before the
+  migration too.
+- **Removed `temperature: 0.2`** -> both guides return 400 for non-default
+  `temperature`/`top_p`/`top_k`; depth and determinism are steered through the prompt plus
+  `effort`.
 - **Kept `effort: "xhigh"`, added a sweep note** -> both guides expose the same
-  `low | medium | high | xhigh | max` scale, and the target guide recommends an effort sweep
-  „inkl. `low`/`medium` für Routinearbeit" — routine upgrade runs likely do not need `xhigh`.
+  `low | medium | high | xhigh | max` scale, and the target guide reserves `xhigh` for „die
+  kapazitätskritischsten Workloads" and asks for an „effort-Sweep inkl. `medium`/`low` für
+  Routinearbeit" — routine upgrade runs likely do not need `xhigh`.
 
 ### Prefill & output contract
 - **Dropped the assistant prefill `"## Step 1 — Inventory"`** -> Fable 5 does not support
-  assistant prefill; the guide points to Structured Outputs (`output_config.format`) or a
-  system-prompt instruction instead. Same story on Opus 4.8, where prefill returns 400.
-- **Replaced the prefill's job with `output_config.format` plus an explicit Deliverables
-  section** -> the prefill was steering the shape of the output; that intent now lives in the
-  output contract instead of in a forced first token.
+  assistant prefill (400); the guide points to Structured Outputs (`output_config.format`) or
+  a system-prompt instruction instead. Same story on Opus 4.8, where prefill returns 400.
+- **Moved the prefill's job into the prompt** -> the target guide offers system-prompt
+  instructions as the prefill replacement; the Deliverables section now states the expected
+  outputs and that the inventory comes first, so no response-format constraint is added.
 
 ### Scaffolding -> goal + behavior sections
 - **Collapsed the six numbered steps into Goal + Deliverables + Constraints** -> the target
-  guide is explicit: „Migrierte Prompts/Skills entschlacken: über-präskriptives
-  Step-by-step-Scaffolding senkt die Qualität — Ziel + Constraints statt Schrittliste". The
-  ordering that actually matters (patch -> minor -> major, test after each group) survives as
-  a stated goal, not as a procedure.
+  guide says migrated prompts should be slimmed down: „für frühere Modelle geschriebene
+  Skills sind oft zu präskriptiv und können die Qualität senken", and its migration notes say
+  „über-präskriptives Scaffolding entfernen". The ordering that actually matters (inventory
+  first, patch -> minor -> major, test after each group) survives as stated goal and
+  deliverables, not as a procedure.
 - **Dropped "After every 3 tool calls, print a one-line status"** -> counting tool calls is a
-  source-side cadence rule (the source guide tells you to strip „after every N tool calls"
-  scaffolding). The same intent — keep me informed, stay brief — is now carried by the
+  source-side cadence rule (the source guide says to remove existing „after every N tool
+  calls"-Scaffolding). The same intent — keep me informed, stay brief — is now carried by the
   Grounded-progress and Communication sections, keyed to completed groups instead of a call
   counter.
 - **Turned the silence default and the autonomy hint into named behavior sections** -> both
-  existed to counter Opus 4.8's higher narration and its habit of asking about small
-  decisions. Fable 5 „profitiert stark von expliziten Kommunikations-/Verhaltens-Sektionen im
-  System-Prompt", so the mechanism changed while the instruction stayed identical in effect.
-- **Added Anti-overplanning, No-tidying and Grounded-progress sections** -> these are the
-  behavior snippets the target guide recommends for Fable 5; they constrain *how* the
-  existing task is executed and add no new work.
+  are task intent, so they stay in effect. The target guide ships ready-made snippets for
+  exactly these („Rückfragen nur bei destruktiven Aktionen/Scope-Änderung/fehlendem Input",
+  „Ergebnis zuerst statt Ausschweifen") and notes that „ein knapper Satz eine ganze
+  Verhaltensliste ersetzt", so each section stays one or two sentences.
+- **Added Anti-overplanning, No-tidying and Grounded-progress sections** -> these are
+  snippets the target guide lists for Fable 5 (Anti-Overplanning, „kein ungefragtes
+  Refactoring/Tidying", „Fortschrittsaussagen gegen Tool-Ergebnisse prüfen"); they constrain
+  *how* the existing task is executed and add no new work.
 
 ### Runtime & failure handling (new for the target)
-- **Added a `stop_reason == "refusal"` check before reading `content[0]`** -> Fable 5's safety
-  classifier returns a refusal with HTTP 200, so reading content first can misfire.
-- **Added server-side fallbacks (`claude-opus-4-8`, beta `server-side-fallback-2026-06-01`)**
-  -> the target guide says to send them by default.
-- **Noted the 30-day retention requirement** -> a ZDR workspace gets a 400 on every Fable 5
-  request; this is a deployment precondition the source model never had.
-- **Added streaming + long-turn notes** -> single Fable 5 requests can run for minutes at hard
-  effort, so timeouts and streaming have to be planned for.
-- **Added the "do not stop early" line** -> the guide notes rare early stopping / „Kontext-
-  Angst" in very long sessions and suggests countering it with a reminder — relevant here
+- **Added a `stop_reason == "refusal"` check before reading `content`** -> Fable 5's safety
+  classifiers return a refusal as HTTP 200 with `stop_reason: "refusal"`; the guide says to
+  check it before reading `content` and discard partial output.
+- **Added a server-side fallback to `claude-opus-4-8`** -> on Fable 5 „Fallbacks sind
+  opt-in" (beta, Claude API only), and the migration notes say to configure them explicitly;
+  the guide names Opus 4.8 as the documented fallback target.
+- **Noted the 30-day retention requirement** -> without Anthropic's authorization there is no
+  ZDR, and on the Claude API an organization without a matching retention configuration gets
+  400 `invalid_request_error` — a deployment precondition the source model never had.
+- **Added streaming + long-turn notes** -> „einzelne Requests auf schweren Aufgaben laufen bei
+  höherem effort viele Minuten", so client timeouts and streaming have to be planned for.
+- **Added the "do not stop early" line** -> the guide notes rare early stopping deep in long
+  sessions and suggests countering it („Autonomie-Reminder gegensteuern") — relevant here
   because a full monorepo upgrade is exactly such a session.
 
 ### Left unchanged, deliberately
 - **Kept the `web_search` / `run_tests` "call this when …" trigger descriptions** -> explicit
-  tool triggers are an Opus 4.8 accommodation for its conservative tool use, so they were
-  candidates for removal. The Fable 5 guide says nothing about tool triggering, and dropping
-  them would rest on a model fact neither guide supports — kept as the safer option.
+  tool triggers are an Opus 4.8 accommodation for its under-use of tools without explicit
+  triggers, so they were candidates for removal. The Fable 5 guide gives no general
+  tool-triggering advice, and dropping them would rest on a model fact neither guide
+  supports — kept as the safer option.
 - **Did not add a memory file, a `send_to_user` tool, or async sub-agents** -> the target
-  guide lists all three as behavior sections Fable 5 benefits from, but each would introduce
-  an artifact or a workflow the original prompt never asked for. Flagged here instead of
-  silently expanding the scope.
+  guide offers snippets for a memory file and asynchronous parallel sub-agents, plus an
+  optional `send_to_user` tool, but each would introduce an artifact or a workflow the
+  original prompt never asked for. Flagged here instead of silently expanding the scope.
 - **Carried the Constraints block over verbatim** -> pure task intent (major-version policy,
   lockfile boundary, revert rule), not a source-model accommodation.
 
 ### Guide gaps
 - Neither guide covers tool-trigger phrasing for Fable 5, which is why the tool descriptions
   were left as-is rather than rewritten.
-- The target guide marks the cross-model handling of returned thinking blocks as unverified.
-  It does not affect this migration — the prompt replays no assistant turns — but it would
-  matter for a multi-turn transcript being moved onto Fable 5.
 
-**Guide-Stand**: `claude-opus-4-8` last_verified 2026-06-13 · `claude-fable-5` last_verified
-2026-06-13. Both are under six months old, so no staleness warning applies. The **source**
-guide is marked `status: legacy` (successor `claude-opus-5`) — worth noting, but it changes
-nothing here: the successor hint fires only when the *target* is legacy, and this migration
-moves off the legacy model, which is the direction the marker exists to encourage.
+**Guide-Stand**: `claude-opus-4-8` last_verified 2026-10-13 · `claude-fable-5` last_verified
+2026-10-13. Both are under six months old, so no staleness warning applies. The target
+`claude-fable-5` is superseded (`status: legacy`): consider migrating to its successor
+`claude-fable-5-1` instead. The target guide notes that Fable 5 stays available (retirement
+not before 9 June 2027).

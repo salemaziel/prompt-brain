@@ -10,10 +10,11 @@ execution:
   allowed_tools: [Read, Glob, Grep, Skill]
 runs: 3
 graders:
-  - name: skill-invoked
-    type: tool_used
-    tool: Skill
-    min: 1
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Migration Algorithm'
+    match: contains
     arm: with-only
   - name: reads-exactly-two-guides
     type: tool_used
@@ -37,21 +38,25 @@ graders:
     type: tool_used
     tool: Read
     input_match: gemini-2.5-pro.md
+    min: 0
     max: 0
   - name: grok-guide-not-read
     type: tool_used
     tool: Read
     input_match: grok-4.md
+    min: 0
     max: 0
   - name: mistral-guide-not-read
     type: tool_used
     tool: Read
     input_match: mistral-large-2.md
+    min: 0
     max: 0
   - name: o3-guide-not-read
     type: tool_used
     tool: Read
     input_match: o3.md
+    min: 0
     max: 0
   - name: body-model-names-survive-verbatim
     type: regex
@@ -77,6 +82,17 @@ graders:
       Does the response proceed with the migration from gpt-5 to claude-opus-4-8 without asking
       which models were meant and without reporting an extra or ambiguous model, treating the
       model names inside the prompt body as ordinary prompt content?
+  - name: no-guide-folder-enumeration
+    type: tool_used
+    tool: Glob
+    input_match: model-guides
+    min: 0
+    max: 0
+  - name: no-grep
+    type: tool_used
+    tool: Grep
+    min: 0
+    max: 0
 expected_outcome: |-
   - Parses `gpt-5` as `current-model` and `claude-opus-4.8` as `target-model` only — the model
     names inside the prompt body do not shift or re-anchor the two leading tokens.

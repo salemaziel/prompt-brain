@@ -3,7 +3,7 @@ model: gemini-2.5-pro
 vendor: Google
 family: Gemini
 aliases: [gemini-2.5-pro-preview-06-05, gemini25pro, gemini-25-pro, gemini2.5pro]
-last_verified: 2026-06-13
+last_verified: 2026-10-13
 status: legacy
 successor: gemini-3.1-pro-preview
 ---
@@ -12,10 +12,10 @@ successor: gemini-3.1-pro-preview
 
 ## Reasoning / Thinking
 - **Typ: immer an (Thinking-Modell, nicht abschaltbar).** Gemini 2.5 Pro ist ein „thinking model"; das Denken kann nicht deaktiviert werden — in der Konfigurationstabelle steht ausdrücklich „N/A: Cannot disable thinking". `thinkingBudget = 0` wird nicht unterstützt.
-- **Tiefensteuerung über `thinkingBudget`** (Teil von `generationConfig` / `thinkingConfig`): Wertebereich für 2.5 Pro **128 bis 32.768 Tokens**. Der Default ist **dynamisches Denken** (`thinkingBudget = -1`): das Modell passt den Aufwand automatisch an die Komplexität der Anfrage an. Das Budget ist eine Richtgröße, kein hartes Limit.
+- **Tiefensteuerung über `thinkingBudget`** (Teil von `generationConfig` / `thinkingConfig`): Wertebereich für 2.5 Pro **128 bis 32.768 Tokens**. Der Default ist **dynamisches Denken** (`thinkingBudget = -1`): das Modell passt den Aufwand automatisch an die Komplexität der Anfrage an. Das Budget ist eine Richtgröße, kein hartes Limit. Gilt für `generateContent` („Gemini 2.5 series models don't support `thinkingLevel`; use `thinkingBudget` instead"); in der Interactions API führt die Thinking-Tabelle gemini-2.5-pro dagegen mit `thinking_level` „low, medium, high".
 - **Gedanken-Zusammenfassungen über `includeThoughts: true`**: liefert „thought summaries" — aufbereitete, mit Überschriften und Schlüsseldetails strukturierte Versionen der internen Überlegungen (inkl. Hinweisen auf Tool-Nutzung). Zugriff im Response über die `parts`, die das boolesche Feld `thought` tragen. Die rohen Gedanken werden nicht offengelegt.
 - **Thought Signatures**: verschlüsselte Repräsentationen des internen Denkprozesses. Bei 2.5 Pro werden sie zurückgegeben, wenn Thinking aktiv ist und die Anfrage Function Calling mit Function Declarations enthält. Beim Bearbeiten der Konversationshistorie oder bei Nutzung der REST-API müssen die Signaturen manuell zurückgegeben werden, um den Denk-Kontext über mehrere Turns zu erhalten; das Google-GenAI-SDK übernimmt dies automatisch.
-- **Deep Think**: ein erweiterter Reasoning-Modus, der mehrere Hypothesen vor der Antwort abwägt (für hochkomplexe Mathe-/Coding-Fälle); separat verfügbar (Trusted-Tester / Vertex AI), nicht der Standard-API-Modus von 2.5 Pro.
+- **Deep Think**: ein erweiterter Reasoning-Modus, der mehrere Hypothesen vor der Antwort abwägt (für hochkomplexe Mathe-/Coding-Fälle); laut I/O-2025-Ankündigung separat verfügbar (Trusted-Tester / Vertex AI; Stand Mai 2025), nicht der Standard-API-Modus von 2.5 Pro.
 
 ## Prompting-Stil
 - **Mäßig präskriptiv, instruktionstreu.** Google empfiehlt „clear and specific instructions" als Fundament; Anweisungen als Frage/Aufgabe/Entitäts-Operation formulieren, vage Anfragen vermeiden.
@@ -37,13 +37,18 @@ successor: gemini-3.1-pro-preview
 - Unterstützte Funktionen u. a.: Function Calling, Code Execution, Structured Outputs, Caching, Batch API, Search Grounding, URL Context, File Search.
 
 ## Migrations-Hinweise
-- **Nachfolger-Caveat:** Der im Frontmatter genannte `successor` `gemini-3.1-pro-preview` ist ein **Preview-Modell**; eine GA-Id der Form `gemini-3.1-pro` existiert nicht (404 auf der Modellseite). Gemini 2.5 Pro bleibt damit das aktuell einzige GA-Pro-Modell — der Nachfolger ist der dokumentierte Weiterentwicklungspfad, aber kein stabiles Migrationsziel für Produktion.
+- **Nachfolger-Caveat:** Der im Frontmatter genannte `successor` `gemini-3.1-pro-preview` ist ein **Preview-Modell** (laut Deprecation-Tabelle der Ersatz für die 2.5-Pro-Preview-Snapshots mit Shutdown-Datum 2.12.2025); eine GA-Id der Form `gemini-3.1-pro` existiert nicht (404 auf der Modellseite). Gemini 2.5 Pro ist damit zum Stand 2026-10-13 das einzige stabile Pro-Modell — der Nachfolger ist der dokumentierte Weiterentwicklungspfad, aber kein stabiles Migrationsziel für Produktion. Zudem unterstützt Gemini 3 Pro laut Familien-Doku keine Bild-Segmentierung (für 3.1 Pro nicht namentlich genannt, Übertragung unbelegt) — Segmentierungs-Workloads nicht auf den Nachfolger migrieren.
+- **Zugang seit 18.09.2026 eingeschränkt:** Google beschränkt den Zugriff auf die 2.5-Modelle auf Nutzer, die sie bereits aktiv verwendet haben („limiting access to the 2.5 models to users who have actively used them in the past"); die Modelle sind laut Google nicht deprecated und werden „until further notice" weiter ausgeliefert (kein Shutdown-Datum). Für neue Projekte nennt Google „3.5 Flash-Lite or 3.8 Flash" — wer 2.5 Pro bisher nicht genutzt hat, kann es als Ziel nicht mehr wählen; dann auf diese Empfehlung bzw. das Preview `gemini-3.1-pro-preview` verweisen.
 - **WEG von Gemini 2.5 Pro (z. B. zu Gemini 3.x):** Modell-spezifische Prompt-Hinweise prüfen — bei Gemini 3.x warnt Google ausdrücklich davor, die Temperature unter den Default zu senken. Thinking-Steuerung kann sich zwischen Generationen unterscheiden (Parameter/Defaults neu verifizieren). Höhere Output-Limits und Cutoff-Daten der Zielmodelle prüfen.
 - **HIN zu Gemini 2.5 Pro (z. B. von einem Nicht-Thinking-Modell):** Damit rechnen, dass standardmäßig **dynamisches Denken** aktiv ist und Thinking nicht abschaltbar ist — Kosten/Latenz durch Thinking-Tokens einplanen oder `thinkingBudget` (128–32.768) setzen. Bei Function Calling auf **Thought Signatures** achten und sie über REST/eigene Historienverwaltung zurückgeben. Für Format-Treue Few-Shot-Beispiele ergänzen; großen Kontext (bis ~1M Tokens) nutzen, dabei Frage ans Ende stellen. Knowledge-Cutoff Januar 2025 berücksichtigen (aktuelles Datum/Grounding in System-Instruction).
 
 ## Quellen
 - https://ai.google.dev/gemini-api/docs/models/gemini-2.5-pro — Modell-Code, Input-Limit 1.048.576, Output-Limit 65.536, Knowledge-Cutoff Januar 2025, Inputs (Audio/Bild/Video/Text/PDF), Output Text, unterstützte Features, Positionierung als Thinking-Modell.
-- https://ai.google.dev/gemini-api/docs/thinking — Thinking nicht abschaltbar bei 2.5 Pro, `thinkingBudget` 128–32.768, Default dynamisch (-1), `includeThoughts`/Thought Summaries, Thought Signatures bei Function Calling.
+- https://ai.google.dev/gemini-api/docs/generate-content/thinking — Thinking nicht abschaltbar bei 2.5 Pro („N/A: Cannot disable thinking"), `thinkingBudget` 128–32.768, Default dynamisch (-1), „Gemini 2.5 series models don't support `thinkingLevel`", `includeThoughts`/Thought Summaries, Thought Signatures bei Function Calling.
+- https://ai.google.dev/gemini-api/docs/thinking — Interactions API: Thinking-Tabelle führt gemini-2.5-pro mit Default „On" und `thinking_level` „low, medium, high".
+- https://ai.google.dev/gemini-api/docs/changelog — Eintrag 18.09.2026: Zugang zu den 2.5-Modellen auf Bestandsnutzer beschränkt, nicht deprecated, für neue Projekte 3.5 Flash-Lite oder 3.8 Flash.
+- https://ai.google.dev/gemini-api/docs/deprecations — `gemini-2.5-pro` ohne Shutdown-Datum; `gemini-3.1-pro-preview` als Ersatz der 2.5-Pro-Preview-Snapshots (03-25 / 05-06 / 06-05).
+- https://ai.google.dev/gemini-api/docs/gemini-3 — Gemini-3-Familien-Doku (laut Banner deprecated, Stand 2026-10-13 noch abrufbar): Bild-Segmentierung „not supported in Gemini 3 Pro or Gemini 3 Flash".
 - https://ai.google.dev/gemini-api/docs/prompting-strategies — Prompt-Design: klare Instruktionen, Few-Shot-Pflicht, Delimiter/Struktur, Prompt-Aufbau, langer Kontext (Frage ans Ende), Datum/Cutoff in System-Instruction, Gemini-3.x-Temperature-Warnung.
 - https://developers.googleblog.com/en/gemini-2-5-thinking-model-updates/ — Thinking-Budget-Steuerung als Familienmerkmal, Coding/agentische Aufgaben als Kern-Use-Case, 06-05 stabil.
 - https://blog.google/innovation-and-ai/models-and-research/google-deepmind/google-gemini-updates-io-2025/ — Deep-Think-Modus (mehrere Hypothesen), GA-Positionierung von 2.5 Pro.

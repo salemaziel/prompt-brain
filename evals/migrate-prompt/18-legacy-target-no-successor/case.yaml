@@ -1,0 +1,79 @@
+schema_version: "1.1"
+name: 18-legacy-target-no-successor
+description: A legacy target with no documented successor must be migrated to, flagged as superseded, and never given an invented replacement.
+tags: [migrate, freshness, legacy, no-successor, lazy-loading]
+execution:
+  prompt: |-
+    /prompt-brain:migrate-prompt sonnet gpt-4.1 Review the diff in review.patch and list every correctness bug with file and line.
+  max_turns: 10
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill]
+runs: 3
+graders:
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Migration Algorithm'
+    match: contains
+    arm: with-only
+  - name: reads-exactly-two-guides
+    type: tool_used
+    tool: Read
+    input_match: model-guides
+    min: 2
+    max: 2
+  - name: reads-source-guide-claude-sonnet-5-5
+    type: tool_used
+    tool: Read
+    input_match: claude-sonnet-5-5\.md
+    min: 1
+    max: 1
+  - name: reads-target-guide-gpt-4-1
+    type: tool_used
+    tool: Read
+    input_match: gpt-4\.1\.md
+    min: 1
+    max: 1
+  - name: no-guide-folder-enumeration
+    type: tool_used
+    tool: Glob
+    input_match: model-guides
+    min: 0
+    max: 0
+  - name: no-grep
+    type: tool_used
+    tool: Grep
+    min: 0
+    max: 0
+  - name: migrated-prompt-in-code-fence
+    type: regex
+    target: last_message
+    pattern: '```.*```'
+    flags: 's'
+    match: contains
+  - name: guide-stand-footer-present
+    type: regex
+    target: last_message
+    pattern: 'Guide-Stand'
+    match: contains
+  - name: target-flagged-as-superseded
+    type: regex
+    target: last_message
+    pattern: 'superseded|legacy|abgelöst'
+    flags: 'i'
+    match: contains
+  - name: no-invented-successor
+    type: llm
+    focus: last_message
+    criteria: |-
+      PASS if the changelog says gpt-4.1 is superseded AND that no official replacement is
+      documented, without naming any model as its successor or recommending migration to one.
+expected_outcome: |-
+  - Covers the Step 5 branch for a legacy target that names NO `successor`: `gpt-4.1.md` is
+    `status: legacy` without a `successor` field (case 08 covers only the with-successor branch).
+  - `sonnet` is the bare family alias and resolves to `claude-sonnet-5-5`; reads exactly
+    `model-guides/claude-sonnet-5-5.md` and `model-guides/gpt-4.1.md`.
+  - The changelog says plainly that gpt-4.1 is superseded and that no official replacement is
+    documented. It must not invent a successor (e.g. "migrate to gpt-5.6-sol instead").
+  - The migration to the requested target is still delivered in full.
+  - Re-pick the target if `gpt-4.1.md` ever gains a `successor`.

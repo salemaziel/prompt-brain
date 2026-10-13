@@ -10,10 +10,11 @@ execution:
   allowed_tools: [Read, Glob, Grep, Skill]
 runs: 3
 graders:
-  - name: skill-invoked
-    type: tool_used
-    tool: Skill
-    min: 1
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Migration Algorithm'
+    match: contains
     arm: with-only
   - name: reads-exactly-two-guides
     type: tool_used
@@ -65,9 +66,22 @@ graders:
     type: llm
     focus: last_message
     criteria: |-
-      Is every change the changelog does list backed by a concrete difference between the two
-      loaded guides? Answer no if cosmetic rephrasing or generic prompt polish is presented as a
-      model-migration change.
+      PASS if every change the changelog lists names a specific gpt-5.6-sol vs gpt-5.6-terra
+      difference as its reason (e.g. a stated difference in reasoning, verbosity or output
+      conventions). FAIL if any listed change is justified only by general prompt quality --
+      clearer wording, added headings, reordering, "more explicit instructions" -- with no model
+      difference named.
+  - name: no-guide-folder-enumeration
+    type: tool_used
+    tool: Glob
+    input_match: model-guides
+    min: 0
+    max: 0
+  - name: no-grep
+    type: tool_used
+    tool: Grep
+    min: 0
+    max: 0
 expected_outcome: |-
   - Exercises SKILL.md's honesty rule for Step 5: "If source and target are very similar and few
     changes apply, say so honestly instead of forcing changes" — untested by the prose suite.

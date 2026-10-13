@@ -10,10 +10,11 @@ execution:
   allowed_tools: [Read, Glob, Grep, Skill]
 runs: 3
 graders:
-  - name: skill-invoked
-    type: tool_used
-    tool: Skill
-    min: 1
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Migration Algorithm'
+    match: contains
     arm: with-only
   - name: reads-exactly-two-guides
     type: tool_used
@@ -64,6 +65,17 @@ graders:
     criteria: |-
       Is the migrated prompt itself free of hedging meta-notes about guide uncertainty, with all
       uncertainty confined to the changelog?
+  - name: no-guide-folder-enumeration
+    type: tool_used
+    tool: Glob
+    input_match: model-guides
+    min: 0
+    max: 0
+  - name: no-grep
+    type: tool_used
+    tool: Grep
+    min: 0
+    max: 0
 expected_outcome: |-
   - Reads exactly `model-guides/claude-opus-4-8.md` and `model-guides/gemma-3.md`.
   - Does NOT assert a structured-output/JSON-schema feature for the target — the target guide

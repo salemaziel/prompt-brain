@@ -13,10 +13,11 @@ execution:
   allowed_tools: [Read, Glob, Grep, Skill]
 runs: 3
 graders:
-  - name: skill-invoked
-    type: tool_used
-    tool: Skill
-    min: 1
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Migration Algorithm'
+    match: contains
     arm: with-only
   - name: reads-exactly-two-guides
     type: tool_used
@@ -40,6 +41,7 @@ graders:
     type: tool_used
     tool: Glob
     input_match: model-guides
+    min: 0
     max: 0
   - name: migrated-prompt-in-code-fence
     type: regex
@@ -85,8 +87,10 @@ graders:
     type: llm
     focus: last_message
     criteria: |-
-      Is every changelog entry a What -> Why pair framed as source -> target: what was changed,
-      and why the target model needs it differently from the source model?
+      Ignoring the closing Guide-Stand footer, any guide-gaps/(unbelegt) note and any
+      superseded/successor note, is every changelog entry a What -> Why pair framed as
+      source -> target: what was changed, and why the target model needs it differently from the
+      source model?
   - name: forced-reasoning-scaffolding-removed
     type: llm
     focus: last_message
@@ -94,12 +98,19 @@ graders:
       Has the source-specific reasoning scaffolding been dropped from the migrated prompt -- the
       <think> block and the forced "think step by step" / "show your reasoning" instructions --
       because the target model handles reasoning differently?
+  - name: no-grep
+    type: tool_used
+    tool: Grep
+    min: 0
+    max: 0
 expected_outcome: |-
   - Reads EXACTLY two files: `model-guides/deepseek-r1.md` and `model-guides/claude-opus-4-8.md`.
   - Reads no third guide and does not enumerate/glob the `model-guides/` folder.
   - Outputs the migrated prompt inside a fenced code block (copy-pasteable).
   - Outputs the changelog as rendered markdown (headings/bold/bullets), NOT in a code block.
-  - Every changelog entry is a **What -> Why** pair framed as source -> target.
+  - Every changelog entry is a **What -> Why** pair framed as source -> target. The closing
+    `Guide-Stand` footer, guide-gaps notes and the successor note are not entries: the target
+    `claude-opus-4-8` is `status: legacy`, so Step 5 must add a superseded/successor note.
   - Drops the source-specific reasoning scaffolding (`<think>` block, forced "think step by
     step" / "show your reasoning") because the target handles reasoning differently.
   - Preserves the task intent exactly: Go review, `review.patch`, correctness bugs, final list.

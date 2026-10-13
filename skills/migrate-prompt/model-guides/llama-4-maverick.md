@@ -3,7 +3,7 @@ model: llama-4-maverick
 vendor: Meta
 family: Llama
 aliases: [llama4-maverick, llama-4-maverick-17b, llama-4-maverick-17b-128e-instruct, llama4:maverick]
-last_verified: 2026-06-13
+last_verified: 2026-10-13
 status: current
 ---
 
@@ -20,7 +20,7 @@ status: current
   - `<|begin_of_text|>` — Beginn des Prompts.
   - `<|header_start|>` … `<|header_end|>` — umschließen die Rolle einer Nachricht.
   - `<|eot|>` — End of Turn; signalisiert, dass das Modell den Turn beendet hat.
-  - `<|end_of_text|>` — Modell stoppt die Token-Generierung.
+  - `<|end_of_text|>` — beendet die Generierung („Model will cease to generate more tokens"); wird laut Doku nur von den Basismodellen (pretrained) erzeugt — Instruct-Turns enden mit `<|eot|>`.
   - Unterstützte Rollen: `system`, `user`, `assistant`, `tool` (im Prompt als `ipython` bezeichnet).
   - Beispiel-Turn-Struktur (verbatim aus der Doku):
     ```
@@ -34,7 +34,7 @@ status: current
 ## Stärken & Schwächen (prompt-relevant)
 - Stärken:
   - Nativ multimodal (Text + Bild als Eingabe, reine Text-Ausgabe); laut Meta „bestes multimodales Modell seiner Klasse".
-  - Starke Benchmark-Werte laut Modellkarte: MMLU Pro 80.5, MATH 61.2, MBPP (Code) 77.6 — gut für Coding-, Mathematik- und Wissensaufgaben.
+  - Starke Benchmark-Werte laut Modellkarte: MMLU Pro 80.5 (Instruct); MATH 61.2 und MBPP (Code) 77.6 (Pretrained-Tabelle) — gut für Coding-, Mathematik- und Wissensaufgaben.
   - Effizientes MoE-Design (nur 17B aktiv) → niedrigere Latenz bei großer Gesamtkapazität; sehr großes 1-Mio-Token-Kontextfenster.
 - Schwächen:
   - Mehrsprachige Performance mit Lücken (z. B. TydiQA 31.7 vs. Llama 3.1 405B 34.3).
@@ -59,12 +59,12 @@ status: current
   - Header-Token-Format (`<|header_start|>`/`<|eot|>`) ist Llama-4-spezifisch und muss auf das Chat-Template der Zielfamilie umgestellt werden.
   - Die strikte Regel „kein Text + Function-Call gemischt" gilt evtl. nicht beim Zielmodell — Tool-Handling-Logik prüfen.
 - Typische Änderungen, wenn man ZU diesem Modell migriert:
-  - Vom Llama-3-Format auf das Llama-4-Format (`<|header_start|>`/`<|header_end|>`/`<|eot|>`) umstellen — die Token-Namen unterscheiden sich (Llama-3-Tokennamen hier (unbelegt) aus den Primärquellen).
+  - Vom Llama-3-Format auf das Llama-4-Format (`<|header_start|>`/`<|header_end|>`/`<|eot|>`) umstellen — die Token-Namen unterscheiden sich (die Llama-3-Tokennamen sind in den Primärquellen nicht belegt (unbelegt)).
   - Empfohlenen „expert conversationalist"-System-Prompt übernehmen/anpassen, um Fehl-Refusals und Floskeln zu reduzieren.
   - Function-Definitionen in die System-Message verlagern; sicherstellen, dass Tool-Calls nie mit Fließtext in derselben Antwort gemischt werden.
   - Multimodale Eingaben über `apply_chat_template` bzw. `AutoProcessor` strukturieren; auf max. 5 Bilder und englisches Bildverständnis achten.
 
 ## Quellen
-- https://www.llama.com/docs/model-cards-and-prompt-formats/llama4/ — offizielles Prompt-Format: Header-Tokens, Rollen inkl. `ipython`, Turn-Struktur, Function-Calling-Formate und Regel „NEVER combine text and function calls", empfohlener System-Prompt, Tiling-Separator-Tokens, Sprachen, kein Reasoning-Modus.
+- https://dev.meta.ai/llama/docs/model-cards-and-prompt-formats/llama4 — offizielles Prompt-Format: Header-Tokens, Rollen inkl. `ipython`, Turn-Struktur, Function-Calling-Formate und Regel „NEVER combine text and function calls", empfohlener System-Prompt, Tiling-Separator-Tokens, Sprachen, kein Reasoning-Modus.
 - https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct — offizielle Meta-Modellkarte: MoE-Architektur (17B aktiv / 400B gesamt / 128 Experten), 1-Mio-Token-Kontext, Knowledge-Cutoff August 2024, Steerability/System-Prompt, Benchmark-Stärken und mehrsprachige Schwächen, multimodale Bild-Eingabe (bis 5 Bilder), `apply_chat_template`/`AutoProcessor`.
 - https://ai.meta.com/blog/llama-4-multimodal-intelligence/ — Meta-Ankündigung „The Llama 4 herd": Positionierung Maverick, MoE-Größenangaben, Modellfamilie (Scout/Maverick).

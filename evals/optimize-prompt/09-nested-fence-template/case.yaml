@@ -1,0 +1,51 @@
+schema_version: "1.1"
+name: 09-nested-fence-template
+description: A prompt that carries its own fenced template must come back inside ONE copyable outer fence that is longer than the inner one.
+tags: [optimize, output-format, nested-fence]
+execution:
+  prompt: |-
+    /prompt-brain:optimize-prompt For each library in libs.txt write a summary using exactly this template:
+    ```markdown
+    ## Pros
+    ## Cons
+    ```
+  max_turns: 10
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill]
+runs: 3
+graders:
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Optimization Algorithm'
+    match: contains
+    arm: with-only
+  - name: template-survives
+    type: regex
+    target: last_message
+    pattern: '## Pros[\s\S]*## Cons'
+    match: contains
+  - name: outer-fence-longer-than-inner
+    type: regex
+    target: last_message
+    pattern: '^(`{4,})[^`\n]*\n[\s\S]*?^```[^`\n]*\n[\s\S]*?^```[ \t]*\n[\s\S]*?^\1[ \t]*$'
+    flags: 'm'
+    match: contains
+  - name: one-copyable-outer-block
+    type: llm
+    focus: last_message
+    criteria: |-
+      PASS if the whole optimized prompt, including its fenced Pros/Cons template, sits inside
+      ONE copyable outer code block with the changelog rendered after it. FAIL if the inner
+      ```markdown fence closes the outer block early, so that part of the prompt or the template
+      spills out as rendered text.
+expected_outcome: |-
+  - Exercises the output rule in optimize-prompt's Output Format section: when the optimized
+    prompt contains a fence (Rule 5 puts templates in code blocks), the outer fence must be
+    longer than the longest inner fence (four backticks, as a rule).
+  - `outer-fence-longer-than-inner` requires a 4+-backtick opener, an inner 3-backtick fence
+    opened and closed inside it, and a closer of the same 4+ backticks. A 3-backtick outer fence
+    that the inner fence closes early (which still passes the older '```.*```' fence check)
+    fails it.
+  - The user's template (`## Pros`, `## Cons`) survives inside the optimized prompt; the
+    changelog is rendered after the outer block.

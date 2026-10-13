@@ -10,7 +10,7 @@ status: legacy
 # GPT-4.1
 
 ## Reasoning / Thinking
-- **Typ: keins.** GPT-4.1 ist KEIN Reasoning-Modell — OpenAI bezeichnet es ausdrücklich als „smartest non-reasoning model" und empfiehlt für Aufgaben, die von eigenständigem Reasoning profitieren, mit GPT-5 zu starten. Es gibt keinen internen Thinking-/Scratchpad-Schritt vor der Antwort.
+- **Typ: keins.** GPT-4.1 ist KEIN Reasoning-Modell — OpenAI bezeichnet es ausdrücklich als „smartest non-reasoning model" und empfiehlt auf der Modellseite, für komplexe Aufgaben mit GPT-5 zu starten („we recommend starting with GPT-5 for complex tasks"). Es gibt keinen internen Thinking-/Scratchpad-Schritt vor der Antwort.
 - Schritt-für-Schritt-Denken muss daher **explizit per Prompt angestoßen** werden („induced chain-of-thought"). Das hebt die Output-Qualität, kostet aber zusätzliche Tokens und Latenz.
 - Konkrete Anstöße aus dem OpenAI-Prompting-Guide:
   - Generischer Starter: „First, think carefully step by step about what documents are needed to answer the query."
@@ -20,7 +20,7 @@ status: legacy
 ## Prompting-Stil
 - **Sehr präskriptiv / literal.** GPT-4.1 „is trained to follow instructions more closely and more literally than its predecessors". Konsequenzen:
   - Implizite Regelableitung ist reduziert — alles muss **explizit** spezifiziert werden; das Modell „liest" weniger zwischen den Zeilen als GPT-4o.
-  - Weicht das Verhalten ab, genügt fast immer eine einzige, klare Korrektursatz: „a single sentence firmly and unequivocally clarifying your desired behavior is almost always sufficient".
+  - Weicht das Verhalten ab, genügt fast immer ein einziger, klarer Korrektursatz: „a single sentence firmly and unequivocally clarifying your desired behavior is almost always sufficient".
   - Übersteuerte Absolut-Anweisungen können nach hinten losgehen: Sagt man z. B. „immer ein Tool aufrufen", erfindet (halluziniert) das Modell ggf. Tool-Calls, wenn Informationen fehlen. Fix: Eskalationsklausel ergänzen, z. B. „If you don't have enough information, ask the user for what you need."
 - **System-Message-Treue:** Das Modell hält sich in agentischen Settings eng an User- *und* System-Prompt. Bei widersprüchlichen Anweisungen folgt es tendenziell denen **näher am Ende** des Prompts.
 - **Agentic-Prompting:** OpenAI empfiehlt drei feste Reminder im Agenten-Systemprompt; sie steigerten intern den SWE-bench-Verified-Score um ~20 %:
@@ -33,7 +33,7 @@ status: legacy
 ## Stärken & Schwächen (prompt-relevant)
 - **Stärken:**
   - Sehr starke, präzise Instruction-Following-Fähigkeit — Outputs lassen sich eng steuern.
-  - Coding/agentic: deutlich besser als GPT-4o (lt. OpenAI +21,4 % auf SWE-bench Verified gegenüber GPT-4o); zuverlässiges Befolgen von Diff-Formaten, weniger überflüssige Edits, konsistente Tool-Nutzung.
+  - Coding/agentic: deutlich besser als GPT-4o (lt. OpenAI +21,4 % auf SWE-bench Verified gegenüber GPT-4o (unbelegt)); zuverlässiges Befolgen von Diff-Formaten, weniger überflüssige Edits, konsistente Tool-Nutzung.
   - Sehr großes Kontextfenster (1.047.576 Tokens) mit gutem Verständnis langer Dokumente.
 - **Schwächen (prompt-relevant):**
   - Literalität ist ein zweischneidiges Schwert: unter- oder widersprüchlich spezifizierte Prompts führen schneller zu unerwünschtem Verhalten als bei „interpretierfreudigeren" Vorgängern.
@@ -43,6 +43,7 @@ status: legacy
   - Kein eingebautes Reasoning → komplexe mehrstufige Logik muss per Prompt erzwungen werden.
 
 ## Output- & Format-Konventionen
+- Kontextfenster 1.047.576 Tokens, **max. Output 32.768 Tokens**; Knowledge Cutoff 1. Juni 2024 (Modellseite).
 - **Delimiter / Strukturierung** (empfohlene Reihenfolge zum Ausprobieren):
   - **Markdown** (Startpunkt): Section-Titel, Code in Backticks.
   - **XML**: funktioniert sehr gut, erlaubt präzises Wrapping/Nesting von Inhalten.
@@ -52,8 +53,9 @@ status: legacy
 - **Diff-Formate (Coding):** empfohlen wird das **V4A-Format** — kontextbasierte Identifikation **ohne Zeilennummern**, mit klaren Vorher/Nachher-Delimitern. Ebenfalls gut: **SEARCH/REPLACE** und Pseudo-XML — beide ohne Zeilennummern und mit klarer Alt/Neu-Abgrenzung.
 
 ## Migrations-Hinweise
+- **Kein `successor`**: OpenAI dokumentiert keinen direkten Nachfolger für gpt-4.1 — die Deprecations-Seite führt nur `gpt-4.1-nano` (→ `gpt-5.6-luna`), nicht gpt-4.1 selbst; die Modellseite verweist lediglich für komplexe Aufgaben auf GPT-5 (das seinerseits abgekündigt ist).
 - **Wenn man VON GPT-4.1 wegmigriert:**
-  - Zu einem **Reasoning-Modell** (z. B. GPT-5 / o-Serie): manuell injizierte „think step by step"-Anweisungen und explizite Planning-Reminder können entfallen oder reduziert werden, da das Reasoning intern erfolgt; ggf. stattdessen Reasoning-Effort/-Parameter steuern (modellabhängig).
+  - Zu einem **Reasoning-Modell** (z. B. die GPT-5-Reihe): manuell injizierte „think step by step"-Anweisungen und explizite Planning-Reminder können entfallen oder reduziert werden, da das Reasoning intern erfolgt; ggf. stattdessen Reasoning-Effort/-Parameter steuern (modellabhängig).
   - Prompts, die stark auf GPT-4.1s wörtliche Literalität getrimmt sind (sehr enge Absolut-Anweisungen), auf dem Zielmodell neu evaluieren — andere Modelle interpretieren freier.
 - **Wenn man ZU GPT-4.1 migriert:**
   - Für ältere Modelle (z. B. GPT-4o) optimierte Prompts können Anpassung erfordern, da GPT-4.1 wörtlicher folgt: „prompts optimized for prior models may require migration."
@@ -65,5 +67,6 @@ status: legacy
 
 ## Quellen
 - https://developers.openai.com/cookbook/examples/gpt4-1_prompting_guide — offizieller GPT-4.1 Prompting Guide (OpenAI Cookbook): literale Instruktionsbefolgung, drei agentische Reminder (Persistence/Tool-Calling/Planning), `tools`-Feld statt Prompt-Injektion, Long-Context-Platzierung am Anfang/Ende, induced Chain-of-Thought, empfohlene Prompt-Struktur, Delimiter (Markdown/XML/JSON), Diff-Formate (V4A/SEARCH-REPLACE/Pseudo-XML), Failure-Modes & Fixes.
-- https://developers.openai.com/api/docs/models/gpt-4.1 — offizielle Modell-Spezifikation: Kontextfenster 1.047.576 Tokens, max. Output 32.768 Tokens, Knowledge Cutoff 1. Juni 2024, Einstufung als „smartest non-reasoning model", Snapshot gpt-4.1-2025-04-14.
+- https://developers.openai.com/api/docs/models/gpt-4.1 — offizielle Modell-Spezifikation: Kontextfenster 1.047.576 Tokens, max. Output 32.768 Tokens, Knowledge Cutoff 1. Juni 2024, Einstufung als „smartest non-reasoning model", Snapshot gpt-4.1-2025-04-14, „we recommend starting with GPT-5 for complex tasks", kein Deprecation-Hinweis.
 - https://openai.com/index/gpt-4-1/ — offizielle Ankündigung „Introducing GPT-4.1 in the API": Modellfamilie, Coding/Instruction-Following/Long-Context-Stärken, +21,4 % auf SWE-bench Verified vs. GPT-4o. (Direktabruf HTTP 403; Inhalte über OpenAI-Suchsnippets verifiziert.)
+- https://developers.openai.com/api/docs/deprecations — kein Eintrag für gpt-4.1 / gpt-4.1-2025-04-14 (nur gpt-4.1-nano → gpt-5.6-luna, Shutdown 23.10.2026); gpt-5-2025-08-07 Shutdown 11.12.2026

@@ -1,0 +1,81 @@
+schema_version: "1.1"
+name: 16-nested-fence-preserved
+description: A prompt that carries its own fenced block must come back inside ONE copyable outer fence that is longer than the inner one.
+tags: [migrate, output-format, nested-fence, lazy-loading]
+execution:
+  prompt: |-
+    /prompt-brain:migrate-prompt gpt-5.6-sol opus Extract every line item from invoices.txt and answer with JSON exactly like this example:
+    ```json
+    {"items":[{"sku":"A1","qty":2}]}
+    ```
+  max_turns: 10
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill]
+runs: 3
+graders:
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Migration Algorithm'
+    match: contains
+    arm: with-only
+  - name: reads-exactly-two-guides
+    type: tool_used
+    tool: Read
+    input_match: model-guides
+    min: 2
+    max: 2
+  - name: reads-source-guide-gpt-5-6-sol
+    type: tool_used
+    tool: Read
+    input_match: gpt-5\.6-sol\.md
+    min: 1
+    max: 1
+  - name: reads-target-guide-claude-opus-5-5
+    type: tool_used
+    tool: Read
+    input_match: claude-opus-5-5\.md
+    min: 1
+    max: 1
+  - name: no-guide-folder-enumeration
+    type: tool_used
+    tool: Glob
+    input_match: model-guides
+    min: 0
+    max: 0
+  - name: no-grep
+    type: tool_used
+    tool: Grep
+    min: 0
+    max: 0
+  - name: json-example-survives
+    type: regex
+    target: last_message
+    pattern: '"sku"'
+    match: contains
+  - name: outer-fence-longer-than-inner
+    type: regex
+    target: last_message
+    pattern: '^(`{4,})[^`\n]*\n[\s\S]*?^```[^`\n]*\n[\s\S]*?^```[ \t]*\n[\s\S]*?^\1[ \t]*$'
+    flags: 'm'
+    match: contains
+  - name: one-copyable-outer-block
+    type: llm
+    focus: last_message
+    criteria: |-
+      PASS if the whole migrated prompt, including its JSON example, sits inside ONE copyable
+      outer code block with the changelog rendered after it. FAIL if the inner ```json fence
+      closes the outer block early, so that part of the prompt or the JSON example spills out as
+      rendered text.
+expected_outcome: |-
+  - Exercises the Step 5 output rule: when the migrated prompt carries its own fenced block, the
+    outer fence must be longer than the longest inner fence (four backticks, as a rule), so the
+    inner ```json fence cannot terminate it early.
+  - `opus` is the bare family alias and resolves to `claude-opus-5-5`; reads exactly
+    `model-guides/gpt-5.6-sol.md` and `model-guides/claude-opus-5-5.md`.
+  - `outer-fence-longer-than-inner` requires a 4+-backtick opener, an inner 3-backtick fence
+    opened and closed inside it, and a closer of the same 4+ backticks. A 3-backtick outer fence
+    that the inner fence closes early (which still passes the older '```.*```' fence check)
+    fails it.
+  - The JSON example survives verbatim inside the migrated prompt; the changelog is rendered
+    after the outer block.

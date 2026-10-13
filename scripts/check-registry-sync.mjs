@@ -27,9 +27,13 @@ if (todayEnv && !isCalendarDate(todayEnv)) {
   console.error(`FAIL: PROMPT_BRAIN_TODAY="${todayEnv}" is not a real YYYY-MM-DD calendar date`);
   process.exit(1);
 }
+// `today` is the UTC calendar day, so a local run and the UTC CI runner agree on it no matter
+// the maintainer's timezone. The future-date check below still allows ONE day of slack: a
+// guide stamped with the local date just after local midnight (ahead of UTC) is not "future".
 const now = new Date();
-const today = todayEnv ? utcDay(todayEnv) : Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+const today = todayEnv ? utcDay(todayEnv) : Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
 const todayIso = new Date(today).toISOString().slice(0, 10);
+const DAY_MS = 86400000;
 
 // --- registry table between the BEGIN/END markers
 const skill = readFileSync(skillPath, 'utf8');
@@ -52,7 +56,9 @@ if (registry.size === 0) errors.push('registry: no rows parsed from the table');
 // --- guide frontmatter
 const guides = new Map();
 for (const f of readdirSync(guidesDir).filter((f) => f.endsWith('.md'))) {
-  const text = readFileSync(join(guidesDir, f), 'utf8');
+  // A UTF-8 BOM is invisible in an editor; without stripping it the `^---` anchor misses and the
+  // guide is reported as having no frontmatter (and its registry row as having no guide).
+  const text = readFileSync(join(guidesDir, f), 'utf8').replace(/^\uFEFF/, '');
   const fm = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!fm) {
     errors.push(`${f}: missing YAML frontmatter`);
@@ -61,12 +67,30 @@ for (const f of readdirSync(guidesDir).filter((f) => f.endsWith('.md'))) {
   // Frontmatter accessors. Both are deliberately line-local: `\s*` around the value would
   // match across newlines, so a key with an empty value would silently capture the next line.
   const fmLines = fm[1].split('\n').map((l) => l.replace(/\r$/, ''));
+  // A duplicated top-level key is ambiguous: this reader would validate one value while a YAML
+  // parser (or the skill) may read the other, so a status or alias guard could be bypassed.
+  const keyCount = new Map();
+  for (const l of fmLines) {
+    const km = l.match(/^([A-Za-z_][A-Za-z0-9_-]*):/);
+    if (km) keyCount.set(km[1], (keyCount.get(km[1]) || 0) + 1);
+  }
+  for (const [k, n] of keyCount) if (n > 1) errors.push(`${f}: duplicate frontmatter key "${k}" (${n} times) — keep exactly one`);
   const keyLine = (k) => fmLines.findIndex((l) => l.startsWith(`${k}:`));
   const unquote = (s) => s.trim().replace(/^["']|["']$/g, '').trim();
+  // Read a plain or quoted YAML scalar the way YAML does: a quoted value ends at its closing
+  // quote, and in a plain value " #" starts a comment.
+  const scalar = (s) => {
+    const v = s.trim();
+    if (v[0] === '"' || v[0] === "'") {
+      const end = v.indexOf(v[0], 1);
+      if (end > 0) return v.slice(1, end).trim();
+    }
+    return v.replace(/[ \t]+#.*$/, '').trim();
+  };
   const get = (k) => {
     const i = keyLine(k);
     if (i === -1) return undefined;
-    const v = fmLines[i].slice(k.length + 1).trim();
+    const v = scalar(fmLines[i].slice(k.length + 1));
     return v === '' ? undefined : v;
   };
   // A list key may be written inline (`aliases: [a, b]`) or as a YAML block list (`aliases:`
@@ -75,7 +99,7 @@ for (const f of readdirSync(guidesDir).filter((f) => f.endsWith('.md'))) {
   const getList = (k) => {
     const i = keyLine(k);
     if (i === -1) return [];
-    const inline = fmLines[i].slice(k.length + 1).trim();
+    const inline = fmLines[i].slice(k.length + 1).trim().replace(/\][ \t]+#.*$/, ']');
     if (inline !== '')
       return inline.replace(/^\[|\]$/g, '').split(',').map(unquote).filter(Boolean);
     const items = [];
@@ -94,14 +118,14 @@ for (const f of readdirSync(guidesDir).filter((f) => f.endsWith('.md'))) {
   }
   if (f !== `${id}.md`) errors.push(`${f}: filename does not match model id "${id}"`);
   const aliases = getList('aliases');
-  const family = get('family');
+  // `family:` stays presence-checked as frontmatter documentation; no check keys on its value.
   for (const key of ['vendor', 'family']) {
     if (!get(key)) errors.push(`${f}: missing "${key}:" in frontmatter`);
   }
   const lastVerified = get('last_verified');
   if (!lastVerified || !isCalendarDate(lastVerified))
     errors.push(`${f}: missing or malformed last_verified (expected a real YYYY-MM-DD calendar date)`);
-  else if (utcDay(lastVerified) > today)
+  else if (utcDay(lastVerified) > today + DAY_MS)
     errors.push(`${f}: last_verified ${lastVerified} is in the future (today is ${todayIso}) — a guide cannot have been verified in the future; a future date also hides the guide from the age report and from --strict-age`);
   const status = get('status');
   if (!status) errors.push(`${f}: missing "status:" (expected current|legacy)`);
@@ -137,7 +161,7 @@ for (const f of readdirSync(guidesDir).filter((f) => f.endsWith('.md'))) {
   const nearMiss = text.match(/\((unbeleg[a-zä]*|unbelastet)\)/g)?.filter((m) => m !== '(unbelegt)');
   if (nearMiss?.length) errors.push(`${f}: near-miss uncertainty marker(s) ${[...new Set(nearMiss)].join(', ')} — use "(unbelegt)" or unambiguous wording`);
 
-  guides.set(id, { aliases, family, successor, status, lastVerified });
+  guides.set(id, { aliases, successor, status, lastVerified });
 }
 
 // --- exact two-way sync registry <-> guides
@@ -164,21 +188,32 @@ for (const [id, g] of guides) {
 // SKILL.md's alias policy: a bare family alias (`opus`, `sonnet`, `mistral-large`) always
 // resolves to the newest guide of that family. "Bare" is read conservatively here: the alias
 // carries no version/generation token at all (no digits) AND is the guide's own id stripped of
-// its version tokens, or a trailing run of it -- `opus` for claude-opus-5, `mistral-large` for
-// mistral-large-3. A family-level `…-latest` that names no generation (`mistral-large-latest`)
-// is a rolling pointer, so it is governed by the same rule; a `…-latest` that names a specific
-// generation (`grok-4-latest`, `grok-4.3-latest`) carries digits, so the digit test below
-// rejects it and it stays version-pinned. Aliases that name a variant the id does not (`deepseek-chat`
-// on deepseek-v3) are pinned vendor strings, not family shorthands, and are left alone.
-// `status` is the ordering signal, not version numbers in ids: it is what the corpus maintains.
+// its version tokens (its "stem"), or a trailing or leading run of it -- `opus` for
+// claude-opus-5, `mistral-large` for mistral-large-3, `doubao` for doubao-seed-2-1-pro. Ids
+// that glue the family name to its version (`qwen3.8-max`, `o3`) would lose that name from a
+// digit-free stem, so the id's head is recovered from its first token (`qwen`) and leads the
+// stem: `qwen` and `qwen-max` are both bare for qwen3.8-max. A family-level `…-latest` that
+// names no generation (`mistral-large-latest`) is a rolling pointer, so it is governed by the
+// same rule; a `…-latest` that names a specific generation (`grok-4-latest`, `grok-4.3-latest`)
+// carries digits, so the digit test below rejects it and it stays version-pinned. Aliases that
+// name a variant the id does not (`deepseek-chat` on deepseek-v3, `wenxin` on ernie-5.1) are
+// not stem runs; the legacy-guide rule further down still keeps them off superseded guides.
+// `status` is the primary ordering signal; version numbers in ids only break a tie between two
+// CURRENT guides of the same stem, and only where they are unambiguous (see newerThan).
 const tokensOf = (s) => s.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-const stemOf = (id) => tokensOf(id).filter((t) => !/\d/.test(t));
+const headOf = (id) => (tokensOf(id)[0] || '').replace(/\d.*$/, '');
+const stemOf = (id) => {
+  const stem = tokensOf(id).filter((t) => !/\d/.test(t));
+  const head = headOf(id);
+  return head && stem[0] !== head ? [head, ...stem] : stem;
+};
 const trails = (a, stem) => a.length <= stem.length && a.every((t, i) => t === stem[stem.length - a.length + i]);
+const leads = (a, stem) => a.length < stem.length && a.every((t, i) => t === stem[i]);
 const isBareFamilyAlias = (alias, id) => {
   const a = tokensOf(alias);
   if (!a.length || a.some((t) => /\d/.test(t))) return false;
   const stem = stemOf(id);
-  return trails(a, stem) || trails(a, [...stem, 'latest']);
+  return trails(a, stem) || trails(a, [...stem, 'latest']) || leads(a, stem);
 };
 
 // A bare alias must sit on a guide whose own stem it names. `family:` is a vendor-wide bucket
@@ -203,34 +238,110 @@ for (const [id, g] of guides) {
     );
   }
 }
-const families = new Map();
+// The other half of the rule: a bare family alias must follow its family's newest generation,
+// so it may not sit on a superseded guide. This is keyed on the guides themselves, never on the
+// free-text `family:` field -- a casing drift there (`Claude` -> `claude`) would split the bucket
+// and silently disarm the guard for exactly the guide a new generation just superseded.
+// `stemOwners` already derives an alias's rightful owners from the ids, so a legacy guide fails
+// precisely when one of its own stem kin is status: current.
+// An ALL-LEGACY family passes on purpose: a bare alias resolves to the newest guide of its
+// family, so with no current stem kin it is already on the newest one and there is no valid
+// target to move it to -- failing there would be an unfixable false positive.
 for (const [id, g] of guides) {
-  if (!g.family) continue;
-  if (!families.has(g.family)) families.set(g.family, []);
-  families.get(g.family).push(id);
+  if (g.status !== 'legacy') continue;
+  for (const alias of g.aliases) {
+    if (!isBareFamilyAlias(alias, id)) continue;
+    // Fall back to the alias's own stem kin, never to every current guide in the vendor
+    // bucket: offering "claude-haiku-4-5.md or claude-opus-5.md" for `opus` would walk the
+    // maintainer straight into the mis-placement the check above exists to catch.
+    const kin = stemOwners(alias).filter((o) => guides.get(o).status === 'current');
+    if (!kin.length) continue;
+    const targets = guides.get(g.successor)?.status === 'current' ? [g.successor] : kin;
+    errors.push(
+      `${id}: bare family alias "${alias}" sits on a status: legacy guide\n` +
+      `    fix: delete "${alias}" from ${id}.md aliases AND its registry row, then add it to ` +
+      `${targets.map((t) => `${t}.md`).join(' or ')} and that guide's registry row\n` +
+      `    (if the old generation still needs a name, leave a version-pinned alias on ${id})`
+    );
+  }
 }
-for (const [family, ids] of families) {
-  const current = ids.filter((i) => guides.get(i).status === 'current');
-  const legacy = ids.filter((i) => guides.get(i).status === 'legacy');
-  if (!current.length || !legacy.length) continue;
-  for (const id of legacy) {
-    const g = guides.get(id);
-    for (const alias of g.aliases) {
-      if (!isBareFamilyAlias(alias, id)) continue;
-      // Fall back to the alias's own stem kin, never to every current guide in the vendor
-      // bucket: offering "claude-haiku-4-5.md or claude-opus-5.md" for `opus` would walk the
-      // maintainer straight into the mis-placement the check above exists to catch.
-      const kin = stemOwners(alias).filter((o) => current.includes(o));
-      const targets = g.successor && current.includes(g.successor) ? [g.successor] : kin;
-      errors.push(
-        `${id}: bare family alias "${alias}" sits on a status: legacy guide (family ${family})\n` +
-        `    fix: delete "${alias}" from ${id}.md aliases AND its registry row, then add it to ` +
-        (targets.length
-          ? `${targets.map((t) => `${t}.md`).join(' or ')} and that guide's registry row`
-          : `the current guide of that same stem and its registry row (none is status: current today)`) + `\n` +
-        `    (if the old generation still needs a name, leave a version-pinned alias on ${id})`
-      );
+
+// A new generation added WITHOUT demoting the old guide leaves two current guides of one stem,
+// and the legacy rule above cannot see a bare alias left on (or moved back to) the older one.
+// So among CURRENT guides of the same stem (same tier: qwen3.8-max is not compared with
+// qwen3.8-flash, nor doubao-seed-2-1-pro with a Lite or Turbo tier), the bare alias must sit on
+// the newest. Two exceptions keep this free of false positives:
+// - The vendor's rolling pointer decides. When the alias has a rolling `<alias>-latest` partner
+//   (`mistral-large` / `mistral-large-latest`), both must sit on the same guide, and no version
+//   comparison runs: under the alias policy (CLAUDE.md, SKILL.md) a preview-only new generation
+//   keeps pinned aliases while the vendor still points `…-latest` at the previous one.
+// - Version numbers are compared only when unambiguous: read as integers and as decimal
+//   fractions, the two orderings must agree. grok-4.20 vs grok-4.7 disagree (20 > 7, but
+//   .20 < .7), so that pair is never called "newer" either way.
+const versionParts = (id) => id.match(/\d+/g) || [];
+const compareParts = (a, b, minor) => {
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if (a[i] === undefined) return -1;
+    if (b[i] === undefined) return 1;
+    const d = i > 0 && minor ? Number(`0.${a[i]}`) - Number(`0.${b[i]}`) : Number(a[i]) - Number(b[i]);
+    if (d) return Math.sign(d);
+  }
+  return 0;
+};
+// 1 when x is unambiguously newer than y, -1 when older, 0 when equal or ambiguous.
+const newerThan = (x, y) => {
+  const asInt = compareParts(versionParts(x), versionParts(y), false);
+  const asDec = compareParts(versionParts(x), versionParts(y), true);
+  return asInt === asDec ? asInt : 0;
+};
+const sameStem = (x, y) => stemOf(x).join('-') === stemOf(y).join('-');
+const aliasHome = new Map();
+for (const [gid, g] of guides) for (const a of g.aliases) aliasHome.set(tokensOf(a).join('-'), gid);
+for (const [id, g] of guides) {
+  if (g.status !== 'current') continue;
+  for (const alias of g.aliases) {
+    const toks = tokensOf(alias);
+    if (toks[toks.length - 1] === 'latest' || !isBareFamilyAlias(alias, id)) continue;
+    const pointer = [...toks, 'latest'].join('-');
+    if (aliasHome.has(pointer)) {
+      const home = aliasHome.get(pointer);
+      if (home !== id)
+        errors.push(
+          `${id}: bare family alias "${alias}" and its rolling partner "${pointer}" sit on different guides (${id}.md, ${home}.md)\n` +
+          `    the vendor's …-latest pointer decides where the family alias resolves: move "${alias}" to ${home}.md\n` +
+          `    (or move both, if the vendor now points "${pointer}" at ${id}), in the guides AND the registry rows`
+        );
+      continue;
     }
+    const newer = [...guides]
+      .filter(([o, og]) => o !== id && og.status === 'current' && sameStem(o, id) && newerThan(o, id) > 0)
+      .map(([o]) => o);
+    if (newer.length)
+      errors.push(
+        `${id}: bare family alias "${alias}" sits on an older current guide; ${newer.map((o) => `${o}.md`).join(', ')} ` +
+        `${newer.length > 1 ? 'are newer current guides' : 'is a newer current guide'} of the same stem\n` +
+        `    fix: stamp ${id}.md "status: legacy" + "successor: ${newer[0]}" and move "${alias}" to the newest guide\n` +
+        `    (guide AND registry row). Only exception (alias policy): the newer guide is preview-only and the vendor's\n` +
+        `    rolling "${alias}-latest" still points at ${id} -- then list "${alias}-latest" next to "${alias}" on ${id}`
+      );
+  }
+}
+
+// Not every rolling family pointer is a stem run (`wenxin` on ernie-5.1, `meta-muse-spark` on
+// muse-spark-1.3, `grok-code-fast` on grok-build-0.1), so the stem rules above cannot see one
+// left behind when its guide is superseded. Rule of thumb that needs no stem heuristic: a
+// digit-free alias names no generation, so it must not stay on a status: legacy guide -- unless
+// it is a vendor API string pinned to exactly that old model, which is listed here on purpose.
+const PINNED_DIGIT_FREE = new Set(['deepseek-chat', 'deepseek-reasoner']);
+for (const [id, g] of guides) {
+  if (g.status !== 'legacy') continue;
+  for (const alias of g.aliases) {
+    if (/\d/.test(alias) || isBareFamilyAlias(alias, id) || PINNED_DIGIT_FREE.has(alias.toLowerCase())) continue;
+    errors.push(
+      `${id}: digit-free alias "${alias}" sits on a status: legacy guide and is not a listed pinned vendor string\n` +
+      `    a digit-free alias names no generation, so it follows the family: move it to ${g.successor ? `${g.successor}.md` : 'the current guide'} ` +
+      `(guide AND registry row), or -- if it is a vendor id pinned to this exact model -- add it to PINNED_DIGIT_FREE in scripts/check-registry-sync.mjs`
+    );
   }
 }
 
@@ -260,7 +371,7 @@ if (errors.length) {
 }
 
 // --- guide-age report: advisory by default, a gate under --strict-age.
-// The skill warns users once a guide passes six months; this gives the maintainer a head start.
+// The skill warns users once a guide is more than 180 days old; this gives the maintainer a head start.
 const AGE_WARN_DAYS = 150;
 const AGE_STALE_DAYS = 180;
 // Dates, `today` included, are resolved and validated at the top of the file: every

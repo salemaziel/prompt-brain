@@ -10,20 +10,23 @@ execution:
   allowed_tools: [Read, Glob, Grep, Skill]
 runs: 3
 graders:
-  - name: skill-invoked
-    type: tool_used
-    tool: Skill
-    min: 1
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Migration Algorithm'
+    match: contains
     arm: with-only
   - name: zero-guide-reads
     type: tool_used
     tool: Read
     input_match: model-guides
+    min: 0
     max: 0
-  - name: zero-guide-globs
+  - name: no-guide-folder-enumeration
     type: tool_used
     tool: Glob
     input_match: model-guides
+    min: 0
     max: 0
   - name: names-the-failing-token
     type: regex
@@ -33,7 +36,7 @@ graders:
   - name: registry-ids-listed
     type: regex
     target: last_message
-    pattern: 'claude-opus-5'
+    pattern: '(?=[\s\S]*claude-opus-5)(?=[\s\S]*gpt-6-astra)(?=[\s\S]*ernie-5\.1)'
     match: contains
   - name: identifies-which-argument-failed
     type: llm
@@ -51,13 +54,21 @@ graders:
     type: llm
     focus: last_message
     criteria: |-
-      Does the response refrain from silently substituting a near-match model (such as gpt-5 or
-      gpt-5-mini) for the unresolvable gpt-6-turbo, and refrain from describing a guide that does
-      not exist?
+      Does the response refrain from silently substituting a near-match model (such as
+      gpt-6-astra, gpt-6-sol, gpt-6.1-sol, gpt-5 or gpt-5-mini) for the unresolvable gpt-6-turbo,
+      and refrain from describing a guide that does not exist?
+  - name: no-grep
+    type: tool_used
+    tool: Grep
+    min: 0
+    max: 0
 expected_outcome: |-
   - Resolution fails on `gpt-6-turbo` and the skill STOPS — no migrated prompt, no changelog.
   - Names which argument failed (the `current-model`), not just "a model".
-  - Lists the available `id`s from the registry table in `SKILL.md`.
+  - Lists the available `id`s from the registry table in `SKILL.md` — the whole table, not a
+    sample: `registry-ids-listed` requires ids from three distant rows (`claude-opus-5`,
+    `gpt-6-astra`, `ernie-5.1`).
   - Reads ZERO guide files (no `Read` on `model-guides/` at all) — including the guide for
     the model that *did* resolve.
-  - Does NOT substitute a near-match (`gpt-5`, `gpt-5-mini`) and does NOT invent a guide.
+  - Does NOT substitute a near-match (`gpt-6-astra`, `gpt-6-sol`, `gpt-6.1-sol`, `gpt-5`,
+    `gpt-5-mini`) and does NOT invent a guide.

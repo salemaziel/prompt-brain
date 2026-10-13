@@ -2,7 +2,7 @@
 model: gpt-5
 vendor: OpenAI
 family: GPT
-aliases: [gpt5, openai-gpt-5, openai-gpt5]
+aliases: [gpt5, openai-gpt-5, openai-gpt5, gpt-5-2025-08-07]
 last_verified: 2026-06-13
 status: legacy
 successor: gpt-5.6-sol
@@ -19,7 +19,7 @@ successor: gpt-5.6-sol
 ## Prompting-Stil
 - Sehr präskriptiv und instruktionstreu: GPT-5 folgt Prompt-Anweisungen mit „surgical precision" und ist „extraordinarily receptive to prompt instructions surrounding verbosity, tone, and tool calling behavior". ([Prompting Guide](https://developers.openai.com/cookbook/examples/gpt-5/gpt-5_prompting_guide))
 - Eigenheit / Risiko: Genau diese Treue macht widersprüchliche oder vage Prompts schädlicher als bei anderen Modellen — GPT-5 „verbraucht Reasoning-Tokens, um die Widersprüche aufzulösen". Prompts sollten daher konfliktfrei und eindeutig sein. ([Prompting Guide](https://developers.openai.com/cookbook/examples/gpt-5/gpt-5_prompting_guide))
-- Empfehlung: Mit dem kleinsten Prompt starten, der den Produkt-Kontrakt erhält, und dann reasoning effort, verbosity, Tool-Beschreibungen und Output-Format gegen repräsentative Beispiele tunen. ([Prompt-Guidance](https://developers.openai.com/api/docs/guides/prompt-guidance), [Prompting Guide](https://developers.openai.com/cookbook/examples/gpt-5/gpt-5_prompting_guide))
+- Empfehlung: Mit `medium` reasoning effort starten und `minimal`, `low` bzw. `high` gegen repräsentative Tasks testen; `text.verbosity` bewusst setzen und strukturierte Antwort-Kontrakte nach Möglichkeit in Structured Outputs verlagern. ([Prompt-Guidance „Using GPT-5"](https://developers.openai.com/api/docs/guides/prompt-guidance?model=gpt-5), Abschnitt Migration quickstart) Experimente und Iteration statt Einheits-Prompt. ([Prompting Guide](https://developers.openai.com/cookbook/examples/gpt-5/gpt-5_prompting_guide))
 - Agentic-Steuerung: GPT-5 liefert standardmäßig „tool preambles" (Plan-/Fortschrittsupdates); Häufigkeit und Stil sind per Prompt steuerbar (z. B. „Always begin by rephrasing the user's goal … outline a structured plan"). „Escape hatches" (Handeln erlauben, „even if it might not be fully correct") reduzieren übermäßiges Nachfragen. ([Prompting Guide](https://developers.openai.com/cookbook/examples/gpt-5/gpt-5_prompting_guide))
 
 ## Stärken & Schwächen (prompt-relevant)
@@ -40,11 +40,13 @@ successor: gpt-5.6-sol
   - Widersprüchliche/vage Alt-Prompts vor der Migration bereinigen — GPT-5 reagiert darauf empfindlicher als Vorgänger. ([Prompting Guide](https://developers.openai.com/cookbook/examples/gpt-5/gpt-5_prompting_guide))
   - Responses-API wird empfohlen: behält Reasoning-Kontext über Tool-Calls hinweg (`previous_response_id`) und liefert messbar bessere Ergebnisse (z. B. Tau-Bench Retail 73,9 % → 78,2 %). ([Prompting Guide](https://developers.openai.com/cookbook/examples/gpt-5/gpt-5_prompting_guide))
 - VON GPT-5 wegmigrieren: Auf Modellen ohne `reasoning_effort`/`verbosity` müssen diese Steuerungen durch Prompt-Anweisungen ersetzt werden (explizite Längen-/Format-/Tiefenvorgaben); Custom Tools und CFG-Grammar-Constraints sind ggf. nicht verfügbar und müssen durch klassisches JSON-Function-Calling plus Post-Validierung ersetzt werden. (unbelegt — keine primärquellenbasierte Wegmigrations-Checkliste auffindbar; abgeleitet aus den GPT-5-spezifischen Parametern in [New Params & Tools](https://developers.openai.com/cookbook/examples/gpt-5/gpt-5_new_params_and_tools))
+- **Abkündigung / Lifecycle:** Snapshot `gpt-5-2025-08-07` wird laut Deprecations-Seite am 11.12.2026 abgeschaltet; offizieller Ersatz dort `gpt-5.6-sol`. Die GPT-5-Modellseite bezeichnet GPT-5 als „previous model" und empfiehlt „the latest GPT-6 Astra". ([Deprecations](https://developers.openai.com/api/docs/deprecations), [Modell-Doku](https://developers.openai.com/api/docs/models/gpt-5))
 
 ## Quellen
 - https://developers.openai.com/cookbook/examples/gpt-5/gpt-5_prompting_guide — offizieller GPT-5 Prompting Guide: reasoning_effort (inkl. minimal), verbosity-Overrides, Instruktionstreue/Eigenheiten, Over-/Under-Eagerness, Tool-Preambles, Markdown-Verhalten, Stärken/Schwächen, GPT-4.1-Migration, Responses-API
 - https://developers.openai.com/api/docs/models/gpt-5 — GPT-5 Modell-Doku: reasoning.effort-Werte, Kontextfenster (400k), Max-Output (128k), Knowledge-Cutoff, Streaming/Function Calling/Structured Outputs
 - https://developers.openai.com/cookbook/examples/gpt-5/gpt-5_new_params_and_tools — neue Parameter & Tools: verbosity-Werte und Default, minimal reasoning, Custom Tools, Context-Free Grammar (Lark/Regex)
 - https://developers.openai.com/cookbook/examples/prompt_migration_guide — Prompt-Migrationsleitfaden: Modellwechsel zuerst, reasoning_effort angleichen, Eval-Suite
-- https://developers.openai.com/api/docs/guides/prompt-guidance — Prompt-Guidance: mit kleinstem tragfähigem Prompt starten und gegen Beispiele tunen
+- https://developers.openai.com/api/docs/guides/prompt-guidance?model=gpt-5 — Prompt-Guidance „Using GPT-5" (modellgebundene Fassung; die Seite ohne Modellparameter beschreibt inzwischen GPT-6): Migration quickstart — mit `medium` starten und `minimal`/`low`/`high` gegen repräsentative Tasks testen, `text.verbosity` bewusst setzen, Structured Outputs
+- https://developers.openai.com/api/docs/deprecations — Deprecations (Ankündigung 2026-06-11): gpt-5-2025-08-07 Shutdown 11.12.2026, Ersatz gpt-5.6-sol
 - https://openai.com/index/gpt-5-system-card/ — GPT-5 System Card: unified system mit Router, safe completions, reduzierte Halluzinationen/Sycophancy, verbesserte Instruktionsbefolgung (Direktabruf HTTP 403 — Inhalt aus Suchindex-Snippet; SOURCE PARTIALLY UNAVAILABLE)

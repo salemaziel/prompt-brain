@@ -10,10 +10,11 @@ execution:
   allowed_tools: [Read, Glob, Grep, Skill]
 runs: 3
 graders:
-  - name: skill-invoked
-    type: tool_used
-    tool: Skill
-    min: 1
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Migration Algorithm'
+    match: contains
     arm: with-only
   - name: reads-exactly-two-guides
     type: tool_used
@@ -37,6 +38,7 @@ graders:
     type: tool_used
     tool: Read
     input_match: grok-4.md
+    min: 0
     max: 0
   - name: migrated-prompt-in-code-fence
     type: regex
@@ -62,6 +64,17 @@ graders:
       Does the response resolve grok-4.6 as the source and gemini-3.7-flash as the target from
       the `from "X" -> Y` form -- stripping the quotes, the leading `from` and the arrow -- and
       proceed with the migration without asking the user to restate the models?
+  - name: no-guide-folder-enumeration
+    type: tool_used
+    tool: Glob
+    input_match: model-guides
+    min: 0
+    max: 0
+  - name: no-grep
+    type: tool_used
+    tool: Grep
+    min: 0
+    max: 0
 expected_outcome: |-
   - Exercises SKILL.md's positional normalization rules together: a leading `from`, quoted model
     tokens, and an `->` separator between the two model arguments.

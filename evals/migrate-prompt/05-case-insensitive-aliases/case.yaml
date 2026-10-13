@@ -10,10 +10,11 @@ execution:
   allowed_tools: [Read, Glob, Grep, Skill]
 runs: 3
 graders:
-  - name: skill-invoked
-    type: tool_used
-    tool: Skill
-    min: 1
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Migration Algorithm'
+    match: contains
     arm: with-only
   - name: reads-exactly-two-guides
     type: tool_used
@@ -57,6 +58,17 @@ graders:
       Does the response resolve both uppercased model tokens and proceed with the migration,
       WITHOUT asking the user to re-enter the models and without falling back to listing the
       model registry?
+  - name: no-guide-folder-enumeration
+    type: tool_used
+    tool: Glob
+    input_match: model-guides
+    min: 0
+    max: 0
+  - name: no-grep
+    type: tool_used
+    tool: Grep
+    min: 0
+    max: 0
 expected_outcome: |-
   - Resolves `DeepSeek-R1` (id, uppercased) and `OPUS-4.8` (alias, uppercased) without error.
   - Reads exactly `model-guides/deepseek-r1.md` and `model-guides/claude-opus-4-8.md`.

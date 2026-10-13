@@ -9,10 +9,7 @@
   "plugins": [
     {
       "name": "prompt-brain",
-      "source": {
-        "source": "github",
-        "repo": "tarekst/prompt-brain"
-      },
+      "source": "./",
       "description": "Optimize and migrate prompts — analyze weaknesses, apply best practices, and migrate a prompt from one model to another, each with a changelog.",
       "category": "productivity",
       "keywords": ["prompt", "optimize", "migrate", "model", "best-practices", "changelog"]

@@ -10,20 +10,23 @@ execution:
   allowed_tools: [Read, Glob, Grep, Skill]
 runs: 3
 graders:
-  - name: skill-invoked
-    type: tool_used
-    tool: Skill
-    min: 1
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Migration Algorithm'
+    match: contains
     arm: with-only
   - name: zero-guide-reads
     type: tool_used
     tool: Read
     input_match: model-guides
+    min: 0
     max: 0
-  - name: zero-guide-globs
+  - name: no-guide-folder-enumeration
     type: tool_used
     tool: Glob
     input_match: model-guides
+    min: 0
     max: 0
   - name: resolved-id-named
     type: regex
@@ -42,6 +45,11 @@ graders:
     criteria: |-
       Does the response stop without emitting a migrated prompt or a migration changelog, and
       without inventing cosmetic changes to justify a migration that is not needed?
+  - name: no-grep
+    type: tool_used
+    tool: Grep
+    min: 0
+    max: 0
 expected_outcome: |-
   - Recognizes both tokens resolve to the same `id` (`claude-opus-4-8`) despite different aliases.
   - Reports that the prompt is already targeted at that model and stops.

@@ -10,10 +10,11 @@ execution:
   allowed_tools: [Read, Glob, Grep, Skill]
 runs: 3
 graders:
-  - name: skill-invoked
-    type: tool_used
-    tool: Skill
-    min: 1
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Migration Algorithm'
+    match: contains
     arm: with-only
   - name: reads-exactly-two-guides
     type: tool_used
@@ -24,29 +25,44 @@ graders:
   - name: reads-newest-opus-guide
     type: tool_used
     tool: Read
-    input_match: claude-opus-5.md
+    input_match: claude-opus-5-5\.md
     min: 1
     max: 1
   - name: reads-newest-sonnet-guide
     type: tool_used
     tool: Read
-    input_match: claude-sonnet-5.md
+    input_match: claude-sonnet-5-5\.md
     min: 1
     max: 1
+  - name: previous-opus-guide-not-read
+    type: tool_used
+    tool: Read
+    input_match: claude-opus-5\.md
+    min: 0
+    max: 0
+  - name: previous-sonnet-guide-not-read
+    type: tool_used
+    tool: Read
+    input_match: claude-sonnet-5\.md
+    min: 0
+    max: 0
   - name: legacy-opus-guide-not-read
     type: tool_used
     tool: Read
     input_match: claude-opus-4-8.md
+    min: 0
     max: 0
   - name: legacy-sonnet-guide-not-read
     type: tool_used
     tool: Read
     input_match: claude-sonnet-4-6.md
+    min: 0
     max: 0
   - name: no-guide-folder-enumeration
     type: tool_used
     tool: Glob
     input_match: model-guides
+    min: 0
     max: 0
   - name: migrated-prompt-in-code-fence
     type: regex
@@ -63,18 +79,28 @@ graders:
     type: llm
     focus: last_message
     criteria: |-
-      Does the response treat the bare alias `opus` as claude-opus-5 and the bare alias `sonnet`
-      as claude-sonnet-5 -- the newest generation of each family -- rather than resolving either
-      one to an older version-pinned model such as claude-opus-4-8 or claude-sonnet-4-6?
+      Does the response treat the bare alias `opus` as claude-opus-5-5 and the bare alias
+      `sonnet` as claude-sonnet-5-5 -- the newest generation of each family -- rather than
+      resolving either one to an older version-pinned model such as claude-opus-5,
+      claude-sonnet-5, claude-opus-4-8 or claude-sonnet-4-6?
+  - name: no-grep
+    type: tool_used
+    tool: Grep
+    min: 0
+    max: 0
 expected_outcome: |-
-  - Encodes SKILL.md's alias policy: a bare family alias (`opus`, `sonnet`, `mistral-large`)
-    always resolves to the NEWEST guide of that family. A family-level `…-latest` that names no
+  - Encodes SKILL.md's alias policy: a bare family alias (`opus`, `sonnet`, `haiku`, `fable`,
+    `mistral-large`) always resolves to the NEWEST guide of that family. A family-level `…-latest` that names no
     generation (`mistral-large-latest`) is rolling and moves with the bare alias; a `…-latest`
     that names a specific generation (`grok-4-latest`, `grok-4.6-latest`) is version-pinned and
     stays on its own guide. `*-latest` is NOT a bare family alias as a class.
-  - `opus` must resolve to `claude-opus-5` and `sonnet` to `claude-sonnet-5`.
-  - Reads exactly `model-guides/claude-opus-5.md` and `model-guides/claude-sonnet-5.md`, and
-    reads neither `claude-opus-4-8.md` nor `claude-sonnet-4-6.md`.
+  - `opus` must resolve to `claude-opus-5-5` and `sonnet` to `claude-sonnet-5-5`. (The other
+    Claude bare aliases follow the same rule: `haiku` -> `claude-haiku-5-5`, `fable` ->
+    `claude-fable-5-1`; `fable` is exercised by case 17.)
+  - Reads exactly `model-guides/claude-opus-5-5.md` and `model-guides/claude-sonnet-5-5.md`,
+    and reads none of `claude-opus-5.md`, `claude-sonnet-5.md`, `claude-opus-4-8.md` or
+    `claude-sonnet-4-6.md`.
+  - Re-point this case whenever a newer Opus or Sonnet guide takes over the bare alias.
   - Does not enumerate/glob the `model-guides/` folder to work out which generation is newest —
     the registry table in SKILL.md is the resolver, which is what keeps lazy loading honest.
   - Produces a normal migration (fenced migrated prompt + rendered changelog).

@@ -17,10 +17,11 @@ execution:
   allowed_tools: [Read, Glob, Grep, Skill]
 runs: 3
 graders:
-  - name: skill-invoked
-    type: tool_used
-    tool: Skill
-    min: 1
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Optimization Algorithm'
+    match: contains
     arm: with-only
   - name: optimized-prompt-in-code-fence
     type: regex

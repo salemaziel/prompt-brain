@@ -10,10 +10,11 @@ execution:
   allowed_tools: [Read, Glob, Grep, Skill]
 runs: 3
 graders:
-  - name: skill-invoked
-    type: tool_used
-    tool: Skill
-    min: 1
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Migration Algorithm'
+    match: contains
     arm: with-only
   - name: reads-exactly-two-guides
     type: tool_used
@@ -36,7 +37,8 @@ graders:
   - name: successor-guide-never-read
     type: tool_used
     tool: Read
-    input_match: claude-opus-5.md
+    input_match: claude-opus-5-5\.md
+    min: 0
     max: 0
   - name: migrated-prompt-in-code-fence
     type: regex
@@ -54,10 +56,10 @@ graders:
     target: last_message
     pattern: '\d{4}-\d{2}-\d{2}'
     match: contains
-  - name: successor-hint-names-claude-opus-5
+  - name: successor-hint-names-claude-opus-5-5
     type: regex
     target: last_message
-    pattern: 'claude-opus-5'
+    pattern: 'claude-opus-5-5'
     match: contains
   - name: successor-note-is-an-addition
     type: llm
@@ -65,19 +67,30 @@ graders:
     criteria: |-
       Does the response still deliver the full migration to the REQUESTED target
       (claude-opus-4-8), with the successor suggestion added as a note -- rather than refusing
-      the migration or silently retargeting it to claude-opus-5?
+      the migration or silently retargeting it to claude-opus-5-5?
   - name: task-intent-preserved
     type: llm
     focus: last_message
     criteria: |-
       Does the migrated prompt still ask to refactor the ingest pipeline in src/ingest/ into a
       queue-backed worker and then update the README, with no goal added or dropped?
+  - name: no-guide-folder-enumeration
+    type: tool_used
+    tool: Glob
+    input_match: model-guides
+    min: 0
+    max: 0
+  - name: no-grep
+    type: tool_used
+    tool: Grep
+    min: 0
+    max: 0
 expected_outcome: |-
   - Both tokens resolve to version-pinned guides — `opus-4.8` must NOT be re-routed to
-    `claude-opus-5` (only the bare `opus` alias points at the newest generation).
+    `claude-opus-5-5` (only the bare `opus` alias points at the newest generation).
   - Reads exactly `model-guides/claude-sonnet-4-6.md` and `model-guides/claude-opus-4-8.md`.
   - The changelog closes with a `Guide-Stand` footer naming both guides' `last_verified` dates.
-  - Because the TARGET guide carries `status: legacy` with `successor: claude-opus-5`, the
+  - Because the TARGET guide carries `status: legacy` with `successor: claude-opus-5-5`, the
     changelog notes this and suggests migrating to the successor instead — without refusing
     or silently retargeting the requested migration.
   - Still produces the full migrated prompt for the requested target (the successor note is

@@ -10,10 +10,11 @@ execution:
   allowed_tools: [Read, Glob, Grep, Skill]
 runs: 3
 graders:
-  - name: skill-invoked
-    type: tool_used
-    tool: Skill
-    min: 1
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Migration Algorithm'
+    match: contains
     arm: with-only
   - name: reads-exactly-two-guides
     type: tool_used
@@ -58,13 +59,26 @@ graders:
       Does the output consist of exactly the two required sections -- a fenced migrated prompt
       followed by a rendered (unfenced) migration changelog -- with no third section explaining
       the algorithm or its depth calibration?
+  - name: no-guide-folder-enumeration
+    type: tool_used
+    tool: Glob
+    input_match: model-guides
+    min: 0
+    max: 0
+  - name: no-grep
+    type: tool_used
+    tool: Grep
+    min: 0
+    max: 0
 expected_outcome: |-
   - The invariant half of the original scenario: whatever the session effort, both runs must
     produce a migrated prompt in a fenced code block plus a rendered changelog, and both must
     read exactly two guides. The contract does not change with effort — these graders pin it.
-  - The differential half CANNOT be expressed in `case.yaml` (there is no effort field in the
-    execution schema), so verify it manually: run this same prompt once after `/effort low` and
-    once after `/effort max`.
+  - The differential half cannot be expressed in this file (`case.yaml` has no effort field,
+    and its `env` accepts only `EVAL_*` keys), so it lives in a separate eval root that a plain
+    `claude plugin eval .` never discovers: `evals-effort/migrate-prompt/01-effort-low-condensed`
+    and `02-effort-max-full`, run under `CLAUDE_CODE_EFFORT_LEVEL` as described in the
+    "Effort-differential cases" section of `evals/README.md`. Rationale those cases encode:
     - The `low` run must be visibly condensed: only the highest-impact migration changes, the
       changelog limited to major items, and `examples.md` NOT read (SKILL.md's depth-calibration
       block states this explicitly for `low`/`medium`).

@@ -2,9 +2,10 @@
 model: claude-sonnet-5
 vendor: Anthropic
 family: Claude
-aliases: [sonnet, sonnet-5, claude-sonnet5, sonnet5]
-last_verified: 2026-08-14
-status: current
+aliases: [sonnet-5, claude-sonnet5, sonnet5]
+last_verified: 2026-10-13
+status: legacy
+successor: claude-sonnet-5-5
 ---
 
 # Claude Sonnet 5
@@ -38,14 +39,18 @@ status: current
 - `thinking.display` steht per Default auf `"omitted"` (Sonnet 4.6: `"summarized"`) — wer Reasoning streamt, muss `display: "summarized"` explizit setzen.
 - Kein Assistant-Prefill — Structured Outputs (`output_config.format`) oder System-Prompt-Anweisungen nutzen.
 - Preis laut Modelltabelle $2 / MTok Input, $10 / MTok Output; Reliable Knowledge Cutoff Januar 2026.
-- Mid-Conversation-System-Messages (`role: "system"` innerhalb von `messages`) werden auf Sonnet 5 **nicht** unterstützt — dort bleibt der Top-Level-`system`-Prompt der Weg. (unbelegt: konkretes Fehlerbild)
+- Mid-Conversation-System-Messages (`role: "system"` innerhalb von `messages`) werden auf Sonnet 5 **nicht** unterstützt — dort bleibt der Top-Level-`system`-Prompt der Weg. Ebenso fehlen Per-Message-Effort und Mid-Conversation-Tool-Changes; ein effort-Wechsel geht nur über den Top-Level-Wert und startet den Prompt-Cache neu.
+- Minimal cachebarer Prompt: 1.024 Tokens.
 
 ## Migrations-Hinweise
 - **VON Sonnet 5 weg**: Geltungsbereiche, die wegen der Wörtlichkeit ausgeschrieben wurden, können beim Zielmodell wieder knapper sein; Tonalitäts- und Varianz-Instruktionen neu bewerten (ggf. wieder `temperature` statt Prompt); Tokenizer-abhängige `max_tokens`-Werte neu bemessen; `xhigh` ist außerhalb der aktuellen Generation oft nicht verfügbar.
 - **ZU Sonnet 5 migrieren**: `budget_tokens` durch adaptives Thinking + `effort` ersetzen; `temperature`/`top_p`/`top_k` entfernen und Tonalität/Varianz per Prompt steuern; Assistant-Prefill ersetzen; beachten, dass ein Request ohne `thinking`-Feld jetzt denkt (`max_tokens` prüfen, oder explizit `disabled` setzen); `display: "summarized"` setzen, falls Reasoning angezeigt wird; Token-Baselines wegen ~30 % mehr Tokens neu erheben; Progress-Scaffolding streichen; Review-Harness von Severity-Filtern auf „alles melden, später filtern" umstellen; bei bisher thinking-freien Setups Thinking an mit niedrigerem effort testen. Auf Amazon Bedrock erzwungenes `tool_choice` zusammen mit `thinking: {type: "disabled"}` senden. (unbelegt: Bedrock-Detail nicht auf den geprüften Seiten bestätigt)
+- **Lifecycle**: Sonnet 5 ist *Legacy* (noch verfügbar, Status „Active (legacy)"); Anthropic empfiehlt die Migration zu Claude Sonnet 5.5 (`claude-sonnet-5-5`; Checkliste im Sonnet-5.5-Guide). Retirement nicht vor dem 30. Juni 2027 (Anthropic-Plattformen).
 
 ## Quellen
-- https://platform.claude.com/docs/en/about-claude/models/overview — belegt id `claude-sonnet-5`, 1M Kontext, 128k Output, $2/$10, Knowledge Cutoff Januar 2026, kein `thinking.type: "enabled"`, adaptives Thinking, effort-Default `high`, 300k-Output-Beta auf der Batches-API.
+- https://platform.claude.com/docs/en/models/sonnet-5/overview — belegt id `claude-sonnet-5`, 1M Kontext, 128k Output, $2/$10, Knowledge Cutoff Januar 2026, adaptives Thinking, effort-Default `high`, 300k-Output-Beta auf der Batches-API, Sampling-Parameter → 400; Status Legacy („Active (legacy)"), Nachfolger Claude Sonnet 5.5, Retirement nicht vor 30.6.2027.
 - https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-sonnet-5 — adaptives Thinking per Default, `budget_tokens` → 400, Sampling-Parameter → 400, ~30 % mehr Tokens durch neuen Tokenizer, effort-Zuordnung zu Sonnet 4.6, Wörtlichkeit, Verbosity, Tool-Triggering (auch mit Thinking off), Progress-Updates, Tonalität, Design-Defaults, Code-Review-Recall, Computer Use `computer_20251124` bis 2576px.
 - https://platform.claude.com/docs/en/build-with-claude/effort — effort-Stufen inkl. `xhigh`/`max` für Sonnet 5, Default `high`, Empfehlungen je Stufe, effort bricht Prompt-Cache bei Wechsel.
-- https://platform.claude.com/docs/en/about-claude/models/migration-guide — Migrationspfad Sonnet 4.6 → Sonnet 5 (Abschnitt `#migrating-from-claude-sonnet-4-6-to-claude-sonnet-5`).
+- https://platform.claude.com/docs/en/build-with-claude/thinking — Sonnet-5-Zeile der Modelltabelle (adaptives Thinking per Default, `budget_tokens` → 400, `disabled` schaltet Thinking ohne effort-Deckel ab), `display`-Default `"omitted"` (Sonnet 4.6: `"summarized"`), Thinking abschalten.
+- https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages — Mid-Conversation-System-Messages auf Sonnet 5 nicht verfügbar; Top-Level-`system` verwenden.
+- https://platform.claude.com/docs/en/models/sonnet-5-5/whats-new-sonnet-5-5 — Abschnitt „Feature support": Per-Message-Effort, Mid-Conversation-System-Messages und -Tool-Changes auf Sonnet 5 nicht verfügbar, Cache-Minimum 1.024 Tokens.

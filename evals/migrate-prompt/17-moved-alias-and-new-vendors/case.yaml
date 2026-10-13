@@ -1,0 +1,87 @@
+schema_version: "1.1"
+name: 17-moved-alias-and-new-vendors
+description: The moved bare alias `fable` must resolve to claude-fable-5-1 (not the older claude-fable-5), and a first-time vendor alias must resolve through the registry.
+tags: [migrate, aliases, resolution, new-vendors, lazy-loading]
+execution:
+  prompt: |-
+    /prompt-brain:migrate-prompt fable qwen Summarize the incident timeline in postmortems/2026-05-outage.md into five bullets for the exec update.
+  max_turns: 10
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill]
+runs: 3
+graders:
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Migration Algorithm'
+    match: contains
+    arm: with-only
+  - name: reads-exactly-two-guides
+    type: tool_used
+    tool: Read
+    input_match: model-guides
+    min: 2
+    max: 2
+  - name: reads-source-guide-claude-fable-5-1
+    type: tool_used
+    tool: Read
+    input_match: claude-fable-5-1\.md
+    min: 1
+    max: 1
+  - name: reads-target-guide-qwen3-8-max
+    type: tool_used
+    tool: Read
+    input_match: qwen3\.8-max\.md
+    min: 1
+    max: 1
+  - name: older-fable-guide-not-read
+    type: tool_used
+    tool: Read
+    input_match: claude-fable-5\.md
+    min: 0
+    max: 0
+  - name: no-guide-folder-enumeration
+    type: tool_used
+    tool: Glob
+    input_match: model-guides
+    min: 0
+    max: 0
+  - name: no-grep
+    type: tool_used
+    tool: Grep
+    min: 0
+    max: 0
+  - name: migrated-prompt-in-code-fence
+    type: regex
+    target: last_message
+    pattern: '```.*```'
+    flags: 's'
+    match: contains
+  - name: guide-stand-footer-present
+    type: regex
+    target: last_message
+    pattern: 'Guide-Stand'
+    match: contains
+  - name: no-successor-hint-emitted
+    type: regex
+    target: last_message
+    pattern: 'successor|nachfolger'
+    flags: 'i'
+    match: not_contains
+  - name: fable-resolved-to-fable-5-1
+    type: llm
+    focus: last_message
+    criteria: |-
+      Does the response treat the bare alias `fable` as claude-fable-5-1 (Fable 5.1), not as
+      claude-fable-5, and `qwen` as qwen3.8-max?
+expected_outcome: |-
+  - Covers the bare alias `fable`, which moved from `claude-fable-5` to `claude-fable-5-1`, and
+    a first-time vendor (Alibaba Qwen) resolved through its bare alias `qwen` -> `qwen3.8-max`.
+  - Reads exactly `model-guides/claude-fable-5-1.md` and `model-guides/qwen3.8-max.md`; never
+    reads `claude-fable-5.md` (the `claude-fable-5\.md` pattern does not match
+    `claude-fable-5-1.md`).
+  - Does not enumerate, glob or grep the `model-guides/` folder.
+  - Both guides are `status: current` with no `successor`, and neither body contains
+    "successor" or "Nachfolger", so no successor hint may appear. Re-check that whenever either
+    guide is edited or the `fable` / `qwen` alias moves.
+  - Produces a normal migration (fenced migrated prompt + rendered changelog + `Guide-Stand`).

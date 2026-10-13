@@ -3,7 +3,7 @@ model: mistral-large-2
 vendor: Mistral AI
 family: Mistral
 aliases: [mistral-large-2407, mistral-large-2.0]
-last_verified: 2026-06-13
+last_verified: 2026-10-13
 status: legacy
 successor: mistral-large-3
 ---
@@ -48,10 +48,10 @@ successor: mistral-large-3
 
 ## Migrations-Hinweise
 - **Typische Änderungen, wenn man VON Mistral Large 2 (2407) wegmigriert:**
-  - Direkter Nachfolger ist **Mistral Large 2.1 (`mistral-large-2411`)**, danach **Mistral Large 3**; `mistral-large-latest` zeigt nicht mehr auf 2407. Für Reproduzierbarkeit die explizite ID `mistral-large-2407` pinnen statt `-latest`.
-  - Retirement von 2407 laut Modellkarte: **30. März 2025** — produktive Pipelines auf eine aktuelle Version umstellen.
+  - Vendor-Ersatz laut Modellkarte und Legacy-Tabelle ist **Mistral Large 3 (`mistral-large-2512`)**; `mistral-large-latest` zeigt nicht mehr auf 2407. Für Reproduzierbarkeit `mistral-large-2512` pinnen statt `-latest` (das laut Lifecycle-Doku generationsübergreifend still wechseln kann). Die Zwischenversion Large 2.1 (`mistral-large-2411`) ist selbst abgelöst: Deprecation 27.02.2026, Retirement-Datum 31.05.2026, Ersatz laut Modellkarte Mistral Medium 3.5. `mistral-large-2407` ist seit **30.03.2025** retired; laut Lifecycle-Doku schlagen Requests auf retired Ids mit 404 fehl — Pinning auf 2407 hilft nicht mehr.
   - Beim Wechsel zu einem **dedizierten Reasoning-Modell** ggf. explizite CoT-Anweisungen entfernen (unbelegt).
 - **Typische Änderungen, wenn man ZU Mistral Large 2 migriert:**
+  - 2407 ist über die Mistral-API seit 30.03.2025 nicht mehr verfügbar (Requests liefern 404); die Modellkarte verlinkt weiterhin die Gewichte (Lizenz MRL).
   - **[INST]-Format / Tokenizer V3** beachten, falls self-hosted: System-Prompt wird der letzten User-Message vorangestellt; bei API-Nutzung übernimmt `mistral_common` das automatisch.
   - Function-Calling auf das Mistral-Schema umstellen (`tools` + `tool_choice`, parallele Aufrufe möglich, Reihenfolge nicht garantiert).
   - Da das Modell auf **Knappheit** trainiert ist: wenn vom vorherigen Modell ausführliche Antworten erwartet wurden, Output-Länge ggf. explizit nachfordern.
@@ -60,8 +60,11 @@ successor: mistral-large-3
 
 ## Quellen
 - https://mistral.ai/news/mistral-large-2407/ — Offizielle Ankündigung „Large Enough": 123B Parameter, 128k Kontext, Sprachen/Code-Sprachen, verbesserte Instruktionsbefolgung & Multi-Turn, Function-Calling (parallel/sequenziell), Konziseness-Designziel, Halluzinations-Reduktion.
-- https://docs.mistral.ai/models/mistral-large-2-0-24-07 — Offizielle Modellkarte: API-ID `mistral-large-2407`, 128k Kontext, 123B Parameter, Retirement-Datum 30.03.2025, Ersatz Mistral Large 3, keine Vision-Capability.
-- https://docs.mistral.ai/capabilities/completion/prompting_capabilities — Offizielle Prompting-Empfehlungen: Rollendefinition, Hierarchie, System- vs. User-Prompt, Markdown/XML-Tags, Few-Shot, JSON/Structured Outputs, Anti-Patterns.
-- https://docs.mistral.ai/cookbooks/concept-deep-dive-tokenization-chat_templates — Tokenizer V3 Chat-Template: `[INST]/[/INST]`-Konvention, `<s>`/`</s>`, Platzierung des System-Prompts.
-- https://docs.mistral.ai/getting-started/changelog — Changelog: Release 24.07.2024, Alias `mistral-large-latest`, Nachfolger `mistral-large-2411`.
+- https://docs.mistral.ai/models/mistral-large-2-0-24-07 — Offizielle Modellkarte: API-ID `mistral-large-2407`, 128k Kontext, 123B Parameter, Retirement-Datum 30.03.2025, Ersatz Mistral Large 3, Gewichte unter MRL verlinkt, keine Vision-Capability.
+- https://docs.mistral.ai/studio/conversations/chat-completion/prompting — Offizielle Prompting-Empfehlungen: Rollendefinition, Hierarchie, System- vs. User-Prompt, Markdown/XML-Tags, Few-Shot, JSON/Structured Outputs, Anti-Patterns.
+- https://docs.mistral.ai/resources/cookbooks/concept-deep-dive-tokenization-chat_templates — Tokenizer V3 Chat-Template: `[INST]/[/INST]`-Konvention, `<s>`/`</s>`, Platzierung des System-Prompts.
+- https://docs.mistral.ai/resources/changelogs — Changelog: Release 24.07.2024, Alias `mistral-large-latest`, Nachfolger `mistral-large-2411`.
+- https://docs.mistral.ai/models — Legacy-Tabelle: 2407 → Mistral Large 3 (Deprecation 30.11.2024, Retirement 30.03.2025), 2411 → Mistral Medium 3.5 (Deprecation 27.02.2026, Retirement 31.05.2026).
+- https://docs.mistral.ai/models/mistral-large-2-1-24-11 — Modellkarte Large 2.1: „Use Mistral Medium 3.5 for new integrations".
+- https://docs.mistral.ai/inference/model-lifecycle — retired Ids liefern 404; `-latest` zeigt generationsübergreifend auf die neueste Version und kann still wechseln.
 - https://docs.mistral.ai/resources/cookbooks/mistral-function_calling-function_calling — Function-Calling-Details: `tool_choice` (inkl. `"any"`), parallele Tool-Calls.
