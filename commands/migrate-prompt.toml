@@ -1,0 +1,6 @@
+description = "Migrates a prompt tuned for one model to another target model with a changelog."
+prompt = '''
+Execute the prompt migration algorithm from `skills/migrate-prompt/SKILL.md` for the following invocation:
+
+{{args}}
+'''

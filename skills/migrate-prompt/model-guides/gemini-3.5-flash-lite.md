@@ -10,49 +10,49 @@ status: current
 # Gemini 3.5 Flash-Lite
 
 ## Reasoning / Thinking
-- Typ: **dynamisches Thinking mit minimalem Default**. Steuerung über das String-Enum `thinking_level` mit `minimal | low | medium | high`, Default **`minimal`** (Thinking-Tabelle: „On (minimal)").
-- `minimal` entspricht laut Doku für die meisten Anfragen der „no thinking"-Einstellung, schaltet Thinking aber nicht garantiert ab („`minimal` does not guarantee that thinking is off").
-- Stufenwahl laut Migrations-Checkliste: für Extraktion, Routing und Klassifikation in hohem Volumen `minimal` belassen; für autonome Subagenten mit Tool-Calls, Code Execution oder mehrstufigem Reasoning `medium` oder `high` setzen, „to prevent premature tool termination". Bei Dokument-Parsing rät Google, `minimal` und `high` je nach Dokumentkomplexität gegeneinander zu testen.
-- `thinking_budget` ist abgelöst; `thinking_level` und `thinking_budget` im selben Request liefern einen 400-Fehler. Die Stufen sind „relative allowances for thinking rather than strict token guarantees".
-- Thought Signatures: im stateful-Betrieb (`store: true` + `previous_interaction_id`) verwaltet der Server sie; stateless müssen alle `thought`-Blöcke unverändert zurückgeschickt werden. Thinking-Tokens werden als Output abgerechnet, und `max_output_tokens` zählt sie mit.
+- Type: **dynamic thinking with minimal default**. Controlled via the string enum `thinking_level` with `minimal | low | medium | high`, default **`minimal`** (thinking table: "On (minimal)").
+- According to documentation, `minimal` corresponds to the "no thinking" setting for most requests, but does not guarantee thinking is turned off ("`minimal` does not guarantee that thinking is off").
+- Level selection according to migration checklist: leave at `minimal` for high-volume extraction, routing, and classification; set to `medium` or `high` for autonomous subagents with tool calls, code execution, or multi-step reasoning "to prevent premature tool termination". For document parsing, Google advises testing `minimal` against `high` depending on document complexity.
+- `thinking_budget` is deprecated; providing both `thinking_level` and `thinking_budget` in the same request yields a 400 error. The levels are "relative allowances for thinking rather than strict token guarantees".
+- Thought Signatures: In stateful operation (`store: true` + `previous_interaction_id`), the server manages them; in stateless operation, all `thought` blocks must be returned unchanged. Thinking tokens are billed as output tokens, and `max_output_tokens` counts them towards the limit.
 
-## Prompting-Stil
-- **Knapp und direkt**: „Be concise. Gemini 3.x responds best to direct, clear instructions." Verbose Prompt-Engineering-Techniken älterer Modelle können laut Doku zu „over-analyze" führen.
-- **Gesprächigkeit anfordern**: Gemini 3.x antwortet per Default wenig verbose; konversationellen Ton explizit verlangen.
-- **Long Context**: Daten zuerst, Frage oder Anweisung ans Ende, eingeleitet mit „Based on the preceding information...".
-- **Keine Sampling-Steuerung**: `temperature`, `top_p` und `top_k` sind „deprecated and ignored"; künftige Modellgenerationen antworten mit HTTP 400. Für mehr Determinismus nennt Google eine System-Instruction mit expliziten Regeln.
-- **Kein Assistant-Prefill**: Ein Request, der mit einem nicht-leeren `model`-Turn endet, liefert 400. Ausgabeform über `system_instruction` oder Structured Outputs erzwingen.
-- **Subagent-Prompts**: Weil der Default `minimal` ist, muss die Denktiefe für Planungs- und Tool-Aufgaben aktiv per `thinking_level` angehoben werden; Google nennt das ausdrücklich für „autonomous planning and complex subagent tasks".
+## Prompting Style
+- **Concise and direct**: "Be concise. Gemini 3.x responds best to direct, clear instructions." Verbose prompt engineering techniques designed for older models can lead to "over-analyze" according to documentation.
+- **Request verbosity explicitly**: Gemini 3.x answers with low verbosity by default; request a conversational tone explicitly if needed.
+- **Long context**: Place data first, with the question or instruction at the end, introduced by "Based on the preceding information...".
+- **No sampling controls**: `temperature`, `top_p`, and `top_k` are "deprecated and ignored"; future model generations will respond with HTTP 400. To achieve higher determinism, Google recommends a system instruction with explicit rules.
+- **No Assistant prefill**: A request ending with a non-empty `model` turn returns 400. Enforce output formatting via `system_instruction` or Structured Outputs.
+- **Subagent prompts**: Because the default is `minimal`, thinking depth for planning and tool tasks must be actively raised via `thinking_level`; Google explicitly recommends this for "autonomous planning and complex subagent tasks".
 
-## Stärken & Schwächen (prompt-relevant)
-- Stärken laut Google: höchster Durchsatz der 3.5-Familie für Datenparsing und Dokumentextraktion; zuverlässigere Tool-Ausführung bei Code Execution, Search und MCP; genaueres Dokument-Parsing und strukturierte Datenextraktion; Frontend-JavaScript und Tabellenverarbeitung über leichtgewichtige Code Execution; stabilere Multi-Turn-Instruktionsbefolgung und Persona-Konsistenz als Gemini 3.1 Flash-Lite; Computer Use als Built-in-Tool.
-- Gegenüber Gemini 2.5 Flash nennt Google einen „Strong migration path" mit höheren Werten auf HLE (18,0 % vs. 11,0 %) und CharXIV (74,5 % vs. 63,7 %).
-- Model Card: basiert auf Gemini 3.1 Flash-Lite; optimiert für latenzkritische Aufgaben in hohem Volumen wie Übersetzung und Klassifikation sowie agentische Workflows.
-- Schwächen laut Model Card: übliche Halluzinationen, Jailbreak-Resistenz noch in Arbeit, gelegentliche Langsamkeit bzw. Timeouts. Knowledge Cutoff **März 2026**, in manchen Domänen nur bis Januar 2025.
-- Bild-Segmentierung (Pixel-Masken) ist laut Google in Gemini 3.x nicht unterstützt.
+## Strengths & Weaknesses (prompt-relevant)
+- Strengths: Highest throughput in the 3.5 family for data parsing and document extraction according to Google; more reliable tool execution for Code Execution, Search, and MCP; more accurate document parsing and structured data extraction; frontend JavaScript and tabular processing via lightweight Code Execution; more stable multi-turn instruction following and persona consistency than Gemini 3.1 Flash-Lite; Computer Use available as a built-in tool.
+- Compared to Gemini 2.5 Flash, Google highlights a "Strong migration path" with higher scores on HLE (18.0% vs. 11.0%) and CharXIV (74.5% vs. 63.7%).
+- Model Card: Based on Gemini 3.1 Flash-Lite; optimized for latency-critical tasks in high volume such as translation and classification, as well as agentic workflows.
+- Weaknesses: Usual hallucinations, jailbreak resistance still in progress, occasional slowness or timeouts according to the Model Card. Knowledge cutoff **March 2026**, in some domains only up to January 2025.
+- Image segmentation (pixel masks) is not supported in Gemini 3.x according to Google.
 
-## Output- & Format-Konventionen
-- 1.048.576 Input-Tokens / 65.536 Output-Tokens. Input: Text, Bild, Video, Audio, PDF → Output nur Text.
-- Unterstützt: Structured Outputs, Function Calling, Caching, Code Execution, Search Grounding, URL Context, File Search, Grounding with Google Maps, Computer Use (Preview), Batch-, Flex- und Priority-Inference. **Nicht** unterstützt: Audio-Generierung, Bild-Generierung, Live API.
-- Function Calling: dieselben Regeln wie bei 3.6 Flash — multimodale Assets in die Response-Payload, Inline-Anweisungen in Function-Responses mit `\n\n` formatieren.
-- Preis pro 1M Tokens (Paid Tier): Input $0.30, Output $2.50 (inkl. Thinking-Tokens); Batch $0.15 / $1.25; Context Caching $0.03 plus $1.00 Storage pro 1M Tokens/Stunde.
+## Output & Format Conventions
+- 1,048,576 input tokens / 65,536 output tokens. Input: text, image, video, audio, PDF → output text only.
+- Supported: Structured Outputs, Function Calling, Caching, Code Execution, Search Grounding, URL Context, File Search, Grounding with Google Maps, Computer Use (Preview), Batch, Flex, and Priority inference. **Not** supported: audio generation, image generation, Live API.
+- Function Calling: Same rules as 3.6 Flash — pass multimodal assets into the response payload, format inline instructions in function responses with `\n\n`.
+- Pricing per 1M tokens (Paid Tier): input $0.30, output $2.50 (including thinking tokens); Batch $0.15 / $1.25; context caching $0.03 plus $1.00 storage per 1M tokens/hour.
 
-## Migrations-Hinweise
-- **Status**: GA seit 21.07.2026, kein Shutdown-Datum angekündigt. Für neue Projekte nennt Google „3.5 Flash-Lite or 3.8 Flash" als „latest models". Es gibt kein neueres Flash-Lite-Textmodell; `gemini-3.1-flash-lite` (Shutdown frühestens 07.05.2027) nennt `gemini-3.5-flash-lite` als Ersatz.
-- **ZU gemini-3.5-flash-lite migrieren**: id tauschen; `thinking_level` bewusst wählen (`minimal` für Durchsatz, `medium`/`high` für Subagenten mit Tools); `temperature`/`top_p`/`top_k`, `candidate_count` und vorgefüllte Model-Turns entfernen; Function Calling nach denselben Regeln wie 3.6 Flash prüfen; Thought Signatures erhalten oder auf `previous_interaction_id` umstellen; verbose Prompt-Engineering und CoT-Scaffolding entfernen.
-- Speziell **von `gemini-2.5-flash`**: `thinkingBudget` durch `thinking_level` ersetzen; ein Budget von `0` wird am ehesten `minimal`, das Thinking aber nicht garantiert abschaltet; explizit gesetzte Temperature entfernen. Segmentierungs-Workloads nicht migrieren — Google empfiehlt dafür weiter Gemini 2.5 Flash mit abgeschaltetem Thinking.
-- Speziell **von `gemini-3.1-flash-lite`**: gleicher `minimal`-Default; Google nennt bessere Persona-Konsistenz und Instruktionsbefolgung über mehrere Turns.
-- **VON gemini-3.5-flash-lite weg**: `thinking_level` in die Steuerung des Ziels übersetzen — zu `gemini-3.8-flash` hebt `minimal` auf `low`, weil `minimal` dort einen Fehler wirft; Thought-Signature- und `previous_interaction_id`-Logik entfernen, wenn das Ziel sie nicht kennt; Sampling-Parameter nur setzen, wenn der Ziel-Guide es verlangt; Kosten und Latenz neu bewerten.
+## Migration Notes
+- **Status**: GA since 2026-07-21, no shutdown date announced. For new projects, Google recommends "3.5 Flash-Lite or 3.8 Flash" as "latest models". There is no newer Flash-Lite text model; `gemini-3.1-flash-lite` (shutdown earliest 2027-05-07) specifies `gemini-3.5-flash-lite` as its replacement.
+- **MIGRATING TO gemini-3.5-flash-lite**: Swap model ID; choose `thinking_level` deliberately (`minimal` for throughput, `medium`/`high` for subagents with tools); remove `temperature`/`top_p`/`top_k`, `candidate_count`, and prefilled model turns; review function calling according to the same rules as 3.6 Flash; preserve thought signatures or switch to `previous_interaction_id`; strip verbose prompt engineering and CoT scaffolding.
+- Specifically **from `gemini-2.5-flash`**: Replace `thinkingBudget` with `thinking_level`; a budget of `0` maps most closely to `minimal`, which does not guarantee thinking is disabled; remove explicitly set temperature. Do not migrate segmentation workloads — Google continues to recommend Gemini 2.5 Flash with thinking disabled for this purpose.
+- Specifically **from `gemini-3.1-flash-lite`**: Same `minimal` default; Google highlights improved persona consistency and multi-turn instruction following.
+- **MIGRATING FROM gemini-3.5-flash-lite**: Translate `thinking_level` to the target's control scheme — migrating to `gemini-3.8-flash` requires upgrading `minimal` to `low`, as `minimal` throws an error there; remove thought signature and `previous_interaction_id` logic if unsupported by the target; set sampling parameters only if required by the target guide; re-evaluate cost and latency.
 
-## Quellen
-- https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite — Modellseite: id `gemini-3.5-flash-lite` (Stable, Juli 2026), 1.048.576 Input / 65.536 Output, Input Text/Bild/Video/Audio/PDF → Text, Capability-Liste inkl. Computer Use (Preview), nicht unterstützte Features, Ausrichtung auf Subagenten und Dokument-Parsing.
-- https://ai.google.dev/gemini-api/docs/whats-new-gemini-3.6 — „What's new in Gemini 3.6 Flash and 3.5 Flash-Lite": Default `minimal`, Preis $0.30 / $2.50, Stärken (Durchsatz, Tool-Zuverlässigkeit, Dokument-Parsing, Persona-Konsistenz), „Strong migration path from Gemini 2.5 Flash" mit HLE- und CharXIV-Werten, Sampling-Deprecation und Prefill-400, Checkliste „Migrate to gemini-3.5-flash-lite" (`minimal` für Durchsatz, `medium`/`high` „to prevent premature tool termination").
-- https://ai.google.dev/gemini-api/docs/thinking — Thinking-Tabelle (`gemini-3.5-flash-lite`: „On (minimal)", `minimal, low, medium, high`), Thought-Signature-Handling stateful/stateless, Thinking-Tokens in der Abrechnung, `max_output_tokens` inkl. Thought-Tokens.
-- https://ai.google.dev/gemini-api/docs/generate-content/thinking — `thinkingLevel`-Tabelle (3.5 & 3.1 Flash-Lite: `minimal` Default), „`minimal` does not guarantee that thinking is off", 2.5-Flash-Budget 0 bis 24576.
-- https://ai.google.dev/gemini-api/docs/gemini-3 — „relative allowances for thinking rather than strict token guarantees", 400-Fehler bei `thinking_level` + `thinking_budget`.
-- https://ai.google.dev/gemini-api/docs/whats-new-gemini-3.5 — Best Practices für alle Gemini 3.x (Kürze, Verbosität, Long-Context-Regel), „Image segmentation is not supported in Gemini 3.x" mit Empfehlung, dafür Gemini 2.5 Flash mit abgeschaltetem Thinking zu nutzen.
-- https://ai.google.dev/gemini-api/docs/models — Modellliste: Gemini 3.5 Flash-Lite (Stable) und der Hinweis „For any new projects, use our latest models: 3.5 Flash-Lite or 3.8 Flash".
-- https://ai.google.dev/gemini-api/docs/deprecations — `gemini-3.5-flash-lite` (21.07.2026, kein Shutdown-Datum angekündigt); `gemini-3.1-flash-lite` mit Shutdown 07.05.2027 und Ersatz `gemini-3.5-flash-lite`.
-- https://ai.google.dev/gemini-api/docs/changelog — 21.07.2026: GA von Gemini 3.5 Flash-Lite als „low-latency, highly cost-effective subagent option".
-- https://ai.google.dev/gemini-api/docs/pricing — Preise 3.5 Flash-Lite: $0.30 / $2.50, Batch $0.15 / $1.25, Caching $0.03 plus $1.00 Storage pro 1M Tokens/Stunde.
-- https://deepmind.google/models/model-cards/gemini-3-5-flash-lite/ — Model Card: basiert auf Gemini 3.1 Flash-Lite, Ausrichtung auf Übersetzung, Klassifikation und agentische Workflows, Limitationen (Halluzinationen, Jailbreak, Langsamkeit/Timeouts), Knowledge Cutoff März 2026 (teils Januar 2025).
+## Sources
+- https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite — Model page: ID `gemini-3.5-flash-lite` (Stable, July 2026), 1,048,576 input / 65,536 output, input text/image/video/audio/PDF → text, capability list including Computer Use (Preview), unsupported features, focus on subagents and document parsing.
+- https://ai.google.dev/gemini-api/docs/whats-new-gemini-3.6 — "What's new in Gemini 3.6 Flash and 3.5 Flash-Lite": Default `minimal`, pricing $0.30 / $2.50, strengths (throughput, tool reliability, document parsing, persona consistency), "Strong migration path from Gemini 2.5 Flash" with HLE and CharXIV scores, sampling deprecation and prefill 400, checklist "Migrate to gemini-3.5-flash-lite" (`minimal` for throughput, `medium`/`high` "to prevent premature tool termination").
+- https://ai.google.dev/gemini-api/docs/thinking — Thinking table (`gemini-3.5-flash-lite`: "On (minimal)", `minimal, low, medium, high`), thought signature handling stateful/stateless, thinking tokens in billing, `max_output_tokens` inclusive of thought tokens.
+- https://ai.google.dev/gemini-api/docs/generate-content/thinking — `thinkingLevel` table (3.5 & 3.1 Flash-Lite: `minimal` default), "`minimal` does not guarantee that thinking is off", 2.5 Flash budget 0 to 24576.
+- https://ai.google.dev/gemini-api/docs/gemini-3 — "relative allowances for thinking rather than strict token guarantees", 400 error on `thinking_level` + `thinking_budget`.
+- https://ai.google.dev/gemini-api/docs/whats-new-gemini-3.5 — Best practices for all Gemini 3.x (conciseness, verbosity, long-context rule), "Image segmentation is not supported in Gemini 3.x" recommending Gemini 2.5 Flash with thinking disabled.
+- https://ai.google.dev/gemini-api/docs/models — Model list: Gemini 3.5 Flash-Lite (Stable) and note "For any new projects, use our latest models: 3.5 Flash-Lite or 3.8 Flash".
+- https://ai.google.dev/gemini-api/docs/deprecations — `gemini-3.5-flash-lite` (2026-07-21, no shutdown date announced); `gemini-3.1-flash-lite` with shutdown 2027-05-07 and replacement `gemini-3.5-flash-lite`.
+- https://ai.google.dev/gemini-api/docs/changelog — 2026-07-21: GA of Gemini 3.5 Flash-Lite as "low-latency, highly cost-effective subagent option".
+- https://ai.google.dev/gemini-api/docs/pricing — Pricing 3.5 Flash-Lite: $0.30 / $2.50, Batch $0.15 / $1.25, caching $0.03 plus $1.00 storage per 1M tokens/hour.
+- https://deepmind.google/models/model-cards/gemini-3-5-flash-lite/ — Model Card: Based on Gemini 3.1 Flash-Lite, focus on translation, classification, and agentic workflows, limitations (hallucinations, jailbreaks, slowness/timeouts), knowledge cutoff March 2026 (partially January 2025).

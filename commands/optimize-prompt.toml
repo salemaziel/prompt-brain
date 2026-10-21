@@ -1,0 +1,6 @@
+description = "Analyzes weaknesses, applies best practices, and reconstructs a prompt with a changelog."
+prompt = '''
+Execute the 5-step prompt optimization algorithm from `skills/optimize-prompt/SKILL.md` on the following prompt:
+
+{{args}}
+'''

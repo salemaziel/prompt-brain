@@ -137,23 +137,23 @@ for (const f of readdirSync(guidesDir).filter((f) => f.endsWith('.md'))) {
   // Body schema: the six sections, in order, exactly as CLAUDE.md documents them.
   const EXPECTED_SECTIONS = [
     '## Reasoning / Thinking',
-    '## Prompting-Stil',
-    '## Stärken & Schwächen (prompt-relevant)',
-    '## Output- & Format-Konventionen',
-    '## Migrations-Hinweise',
-    '## Quellen',
+    '## Prompting Style',
+    '## Strengths & Weaknesses (prompt-relevant)',
+    '## Output & Format Conventions',
+    '## Migration Notes',
+    '## Sources',
   ];
   const sections = (text.match(/^## .+$/gm) || []).map((s) => s.trim());
   if (sections.join('\n') !== EXPECTED_SECTIONS.join('\n'))
     errors.push(`${f}: section headings do not match the schema exactly, in order\n    got:      ${sections.join(' | ')}\n    expected: ${EXPECTED_SECTIONS.join(' | ')}`);
 
-  const quellen = text.split(/^## Quellen\s*$/m)[1];
-  if (!quellen || !/https?:\/\//.test(quellen)) {
-    errors.push(`${f}: missing "## Quellen" section with at least one URL`);
+  const sources = text.split(/^## Sources\s*$/m)[1];
+  if (!sources || !/https?:\/\//.test(sources)) {
+    errors.push(`${f}: missing "## Sources" section with at least one URL`);
   } else {
-    for (const line of quellen.split('\n')) {
+    for (const line of sources.split('\n')) {
       if (/^-\s*https?:\/\//.test(line) && !line.includes(' — '))
-        errors.push(`${f}: Quellen entry lacks a " — " note: ${line.trim().slice(0, 70)}`);
+        errors.push(`${f}: Sources entry lacks a " — " note: ${line.trim().slice(0, 70)}`);
     }
   }
 

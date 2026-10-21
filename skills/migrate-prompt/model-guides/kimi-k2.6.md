@@ -10,50 +10,61 @@ status: current
 # Kimi K2.6
 
 ## Reasoning / Thinking
-- Typ: **umschaltbar**. `thinking.type`: `"enabled"` (Default) | `"disabled"`; mit dem OpenAI-SDK über `extra_body={"thinking": {"type": "disabled"}}`. K2.6 ist damit das einzige aktuelle Kimi-API-Modell mit Non-Thinking-Modus (kimi-k3 und kimi-k2.7-code denken immer).
-- `thinking.keep`: `null` (Default — historisches `reasoning_content` früherer Turns wird ignoriert, kürzerer Kontext, geringere Kosten) | `"all"` (Preserved Thinking). `keep` betrifft nur frühere Turns, nicht ob im aktuellen Turn gedacht wird; Moonshot empfiehlt `keep: "all"` zusammen mit `type: "enabled"`.
-- **Kein `reasoning_effort`** — die Denktiefe ist nur an/aus, nicht stufbar.
-- `reasoning_content` und `content` teilen sich `max_tokens` (Default 32.768); für Multi-Step-Tool-Calls empfiehlt der Thinking-Guide `max_tokens >= 16000` und Streaming. Im Stream kommt `reasoning_content` immer vor `content`.
-- Innerhalb einer Tool-Schleife das gesamte `reasoning_content` mitsenden; Weglassen ist kein Fehler, verschlechtert laut Quickstart aber Kontinuität und Tool-Call-Qualität.
+- Type: **toggleable**. `thinking.type`: `"enabled"` (default) | `"disabled"`; in the OpenAI SDK pass via `extra_body={"thinking": {"type": "disabled"}}`. K2.6 is currently the only active Kimi API model with a non-thinking mode (kimi-k3 and kimi-k2.7-code always reason).
+- `thinking.keep`: `null` (default — historic `reasoning_content` from earlier turns is ignored, shorter context, lower costs) | `"all"` (Preserved Thinking). `keep` affects only earlier turns, not whether the current turn reasons; Moonshot recommends `keep: "all"` combined with `type: "enabled"`.
+- **No `reasoning_effort`** — thinking depth is strictly on/off, not tiered.
+- `reasoning_content` and `content` share `max_tokens` (default 32,768); for multi-step tool calls, the thinking guide recommends `max_tokens >= 16000` and streaming. In streaming, `reasoning_content` always precedes `content`.
+- Within a tool loop, send all `reasoning_content`; omitting it is not an error, but degrades continuity and tool-call quality according to the quickstart.
 
-## Prompting-Stil
-- Keine K2.6-spezifische Prompting-Anleitung; es gelten die allgemeinen Plattform-Empfehlungen: Rolle im System-Message setzen, Abschnitte mit Delimitern (Triple Quotes, XML-Tags, Überschriften) trennen, Arbeitsschritte explizit ausschreiben, Few-Shots für schwer beschreibbare Stile, Längenvorgaben als Absatz- oder Bullet-Zahl statt Wortzahl („The model can't read your mind").
-- **Kein Sampling-Steuerknüppel**: temperature hängt fix am Modus, top_p/n/Penalties sind fixiert (s. u.). Varianz und Formattreue müssen über Prompt, `response_format` und Tool-Schemas kommen; Moonshot rät, die Defaults nicht zu übergeben.
-- **Tools**: `tool_choice` nur `"auto"` (Default) oder `"none"`; laut Parameter-Referenz ist `"required"` auf kimi-k2.6 generell nicht unterstützt und liefert einen Fehler, der Quickstart begründet die Einschränkung mit aktivem Thinking. Tool-Erzwingung gehört daher in die Prompt-Anweisung.
-- Wiederholte identische Tool-Calls behandelt Moonshot plattformweit Client-seitig: Message-Layout prüfen, dann `<system-reminder>`-Hinweise ab 3, verschärft ab 5 und erneut ab 8 identischen Wiederholungen — in der Agent-Schleife, nicht im statischen System-Prompt.
-- Agent-Framework: Laut Modellkarte arbeitet K2.6 „best with Kimi Code CLI as its agent framework".
+## Prompting Style
+- No K2.6-specific prompting guide; general platform recommendations apply: set role in system message, separate sections with delimiters (triple quotes, XML tags, headers), specify steps explicitly, few-shot examples for hard-to-describe styles, length constraints as paragraph or bullet counts rather than word counts ("The model can't read your mind").
+- **No sampling controls**: temperature is fixed to the mode, top_p/n/penalties are fixed (see below). Variance and format adherence must be achieved through prompt instructions, `response_format`, and tool schemas; Moonshot advises against passing defaults.
+- **Tools**: `tool_choice` supports only `"auto"` (default) or `"none"`; according to the parameter reference, `"required"` is not supported on kimi-k2.6 and returns an error; the quickstart attributes this restriction to active thinking. Tool enforcement must therefore be specified via prompt instructions.
+- Repeated identical tool calls are handled client-side platform-wide: check message layout, then issue `<system-reminder>` prompts starting at 3, strengthened at 5, and repeated at 8 identical retries — within the agent loop, not in the static system prompt.
+- Agent framework: according to the model card, K2.6 works "best with Kimi Code CLI as its agent framework".
 
-## Stärken & Schwächen (prompt-relevant)
-- Stärken: Allzweckmodell für Text, Bild und Video, Dialog- und Agent-Aufgaben; Long-horizon-Coding über Sprachen (Rust, Go, Python) und Domänen (Frontend, DevOps, Performance) hinweg (Ankündigung: 4.000+ Tool-Calls, über 12 Stunden kontinuierliche Ausführung); Coding-Driven Design aus Prompts und visuellen Vorlagen; Agent-Swarm bis 300 Sub-Agenten × 4.000 Schritte.
-- Schwäche Structured Output: bei komplexen Schemas laut Moonshot gelegentlich instabil — `content` kann in einen Markdown-Codeblock gehüllt sein, `oneOf`/`$ref` werden nicht strikt befolgt, bei `strict=false` oder `partial=true` erscheinen Felder außerhalb des Schemas, statt `null` kommen teils leere Strings. Moonshot empfiehlt einfache Schemas, eine zweite Validierungsschicht und für Structured Output `kimi-k2.7-code`.
-- Weitere Schwächen: keine öffentlichen Bild-URLs (nur base64 bzw. Datei-Upload, Request-Body max. 100 MB); kein separat abrechenbarer Cache-Write und keine TTL-Wahl (laut Caching-FAQ nur kimi-k3); Video-Chat laut Modellkarte experimentell und nur über die offizielle API.
-- Eingebaute Web-Suche `$web_search` ist plattformweit abgekündigt (Abschaltung 20.10.2026); der K2.6-Quickstart nennt sie zudem als vorübergehend inkompatibel mit dem Thinking-Modus. Ersatz sind die REST-APIs `/v1/tools/search`, `/v1/tools/search_pro`, `/v1/tools/fetch`.
+## Strengths & Weaknesses (prompt-relevant)
+- Strengths:
+  - General-purpose model for text, image, and video, dialogue, and agentic workflows.
+  - Long-horizon coding across languages (Rust, Go, Python) and domains (frontend, DevOps, performance) (announcement: 4,000+ tool calls, over 12 hours of continuous execution).
+  - Coding-driven design from prompts and visual mockups.
+  - Agent swarm capability supporting up to 300 sub-agents × 4,000 steps.
+- Weaknesses:
+  - Structured Output instability with complex schemas: according to Moonshot, `content` can occasionally be wrapped in Markdown code blocks, `oneOf`/`$ref` are not strictly adhered to, with `strict=false` or `partial=true` extraneous fields may appear, and empty strings may be returned instead of `null`. Moonshot recommends simpler schemas, a second validation layer, or `kimi-k2.7-code` for structured output.
+  - Image inputs: no public image URLs supported (only base64 or file upload, request body max 100 MB).
+  - Caching: no separately billable cache write and no TTL selection (available only on kimi-k3 according to Caching FAQ).
+  - Video chat: experimental according to model card and available only via the official API.
+  - Built-in web search `$web_search` is deprecated platform-wide (sunset 2026-10-20); the K2.6 quickstart also notes temporary incompatibility with thinking mode. Replacements are REST APIs `/v1/tools/search`, `/v1/tools/search_pro`, `/v1/tools/fetch`.
 
-## Output- & Format-Konventionen
-- Kontextfenster 262.144 Tokens (256K); `max_tokens` Default 32.768. Modalitäten Text/Bild/Video → Text.
-- **Fixierte Sampling-Parameter**: temperature 1.0 (Thinking) bzw. 0.6 (Non-Thinking), top_p 0.95, n 1, presence_penalty 0, frequency_penalty 0 — jeder andere Wert ist ein Fehler.
-- `response_format`: `json_schema` mit `strict: true` (Moonshot: „Always explicitly set strict: true"); nur `choices[0].message.content` parsen und auf K2.6 Markdown-Marker vor dem Parsen entfernen.
-- Schnittstelle: Chat Completions (OpenAI-kompatibel). Die Responses-API und das `model`-Enum der Messages-API-Referenz führen nur `kimi-k3`.
-- Preise je 1M Tokens: $0.16 Cache-Hit / $0.95 Cache-Miss Input, $4.00 Output.
-- Offene Gewichte (`moonshotai/Kimi-K2.6`, Modified MIT): 1 T Parameter gesamt / 32 B aktiv, MoE mit 384 Experten (8 gewählt, 1 geteilt), MoonViT-Vision-Encoder, natives INT4. Für vLLM/SGLang empfiehlt die Karte temperature 1.0 (Thinking) bzw. 0.6 (Instant) und top_p 0.95; Instant dort über `chat_template_kwargs: {"thinking": False}`.
+## Output & Format Conventions
+- Context window: 262,144 tokens (256K); `max_tokens` default 32,768. Modalities text/image/video → text.
+- **Fixed sampling parameters**: `temperature` 1.0 (thinking) or 0.6 (non-thinking), `top_p` 0.95, `n` 1, `presence_penalty` 0, `frequency_penalty` 0 — any other value returns an error.
+- `response_format`: `json_schema` with `strict: true` (Moonshot: "Always explicitly set strict: true"); parse only `choices[0].message.content` and strip Markdown markers prior to parsing on K2.6.
+- Interface: Chat Completions (OpenAI-compatible). The Responses API and the `model` enum of the Messages API reference only support `kimi-k3`.
+- Pricing per 1M tokens: $0.16 cache-hit / $0.95 cache-miss input, $4.00 output.
+- Open weights (`moonshotai/Kimi-K2.6`, Modified MIT): 1T parameters total / 32B active, MoE with 384 experts (8 selected, 1 shared), MoonViT vision encoder, native INT4. For vLLM/SGLang, the card recommends `temperature` 1.0 (thinking) or 0.6 (instant) and `top_p` 0.95; instant mode is enabled via `chat_template_kwargs: {"thinking": False}`.
 
-## Migrations-Hinweise
-- **ZU kimi-k3**: laut FAQ `model` tauschen, die K2.x-`thinking`-Konfiguration entfernen, optional `reasoning_effort` (`low|high|max`, Default `max`) setzen und in Multi-Turn- und Tool-Abläufen die komplette Assistant-Message inkl. `reasoning_content` unverändert zurückgeben (auf K3 Pflicht, auf K2.6 ohne `keep: "all"` optional). Non-Thinking-Prompts haben auf K3 kein Äquivalent — K3 denkt immer, nächster Hebel ist `reasoning_effort: "low"`.
-- **ZU kimi-k2.7-code**: `thinking` entfernen (nur `{"type":"enabled","keep":"all"}` wäre gültig), die 0.6-Temperatur-Annahme streichen und historisches `reasoning_content` zwingend zurückgeben; vereinfachte JSON-Schemas dürfen dort wieder `oneOf`/`$ref` nutzen.
-- **VON anderen Anbietern**: Sampling- und Effort-Regler ersatzlos streichen; ein „schnelles" Ziel ohne Reasoning auf `thinking.type: "disabled"` abbilden, gestuftes Reasoning-Budget gibt es nicht; `tool_choice: "required"` bzw. erzwungene Tools in Prompt-Anweisungen umformulieren; Bild-URLs auf base64 oder Datei-Upload umstellen; komplexe Schemas vereinfachen.
-- **VON kimi-k2.6 weg**: den Thinking-Schalter auf den Mechanismus des Ziels abbilden; Markdown-Stripping und Zweitvalidierung nur behalten, wenn das Ziel ähnliche Schwächen dokumentiert; Sampling-Parameter wieder als echte Stellschrauben einplanen.
+## Migration Notes
+- **MIGRATING TO kimi-k3**:
+  - According to FAQ, swap `model`, remove the K2.x `thinking` configuration, optionally set `reasoning_effort` (`low|high|max`, default `max`), and replay the full assistant message including `reasoning_content` unchanged across multi-turn and tool loops (mandatory on K3, optional on K2.6 without `keep: "all"`). Non-thinking prompts have no direct equivalent on K3 — K3 always reasons; the closest alternative is `reasoning_effort: "low"`.
+- **MIGRATING TO kimi-k2.7-code**:
+  - Remove `thinking` (only `{"type":"enabled","keep":"all"}` is valid), drop the 0.6 temperature assumption, and mandatory replay of historical `reasoning_content`; simplified JSON schemas may reintroduce `oneOf`/`$ref`.
+- **MIGRATING FROM other providers**:
+  - Remove sampling and effort parameters completely; map a fast non-reasoning target to `thinking.type: "disabled"`; tiered reasoning budgets do not exist; convert `tool_choice: "required"` or forced tools into prompt instructions; convert image URLs to base64 or file uploads; simplify complex schemas.
+- **MIGRATING FROM kimi-k2.6**:
+  - Map the thinking toggle to the target mechanism; keep Markdown stripping and secondary validation only if the target documents similar weaknesses; re-enable sampling parameters as active tuning controls.
 
-## Quellen
-- https://platform.kimi.ai/docs/models.md — Roster: `kimi-k2.6` „Supports both visual and text input, thinking and non-thinking modes, and dialogue and Agent tasks. Context 256k"; nicht in der Abkündigungstabelle.
-- https://platform.kimi.ai/docs/api/models-overview.md — Parameter-Matrix: `thinking` enabled/disabled/`keep: "all"`, kein `reasoning_effort`, kein `tool_choice: "required"`, temperature 1.0/0.6 fix, top_p/n/Penalties fix; FAQ „Switching from `kimi-k2.6` to `kimi-k3`"; `extra_body`-Beispiel.
-- https://platform.kimi.ai/docs/guide/kimi-k2-6-quickstart.md — Positionierung als Allzweckmodell, Long-horizon-Coding, `max_tokens`-Default 32768, `thinking`-Default, fixierte Sampling-Werte, `tool_choice` nur auto/none bei aktivem Thinking, `reasoning_content` in Tool-Schleifen behalten, `$web_search`-Inkompatibilität mit Thinking, keine Bild-URLs, 100-MB-Request-Limit.
-- https://platform.kimi.ai/docs/guide/use-thinking-models.md — `thinking.type`/`thinking.keep` mit Defaults, Preserved Thinking, `reasoning_content` + `content` ≤ `max_tokens`, `max_tokens >= 16000` und Streaming empfohlen.
-- https://platform.kimi.ai/docs/guide/response_format.md — K2.6-Instabilitäten bei komplexen Schemas (Markdown-Codeblock, `oneOf`/`$ref`, Felder außerhalb des Schemas, leere Strings), Empfehlung von kimi-k2.7-code für Structured Output, `strict: true`.
-- https://platform.kimi.ai/docs/guide/prompt-best-practice.md — allgemeine Plattform-Prompting-Empfehlungen (Rolle, Delimiter, Schritte, Few-Shots, Längensteuerung).
-- https://platform.kimi.ai/docs/guide/tool-call-repeat.md — Message-Layout-Check und Reminder-Eskalation bei 3 / 5 / 8 identischen Tool-Calls.
-- https://platform.kimi.ai/docs/pricing/chat-k3.md und https://platform.kimi.ai/docs/guide/context-caching.md — $0.16 / $0.95 / $4.00 je 1M Tokens, 262.144-Token-Kontext; Cache-Write nur für kimi-k3, nicht für kimi-k2.6.
-- https://platform.kimi.ai/docs/guide/use-web-search.md und https://platform.kimi.ai/docs/pricing/websearch.md — `$web_search` abgekündigt, Abschaltung 20.10.2026; Ersatz `/v1/tools/search`, `/v1/tools/search_pro`, `/v1/tools/fetch`.
-- https://platform.kimi.ai/docs/api/messages.md und https://platform.kimi.ai/docs/api/responses.md — `model`-Enum bzw. unterstütztes Modell jeweils nur `kimi-k3`.
-- https://platform.kimi.ai/docs/platform-changelog.md — April 2026: Release von Kimi K2.6 über die Open-Platform-API.
-- https://huggingface.co/moonshotai/Kimi-K2.6 — offizielle Modellkarte: Key Features (Long-Horizon Coding, Coding-Driven Design, Agent Swarm 300 × 4.000), 1 T / 32 B aktiv, 384 Experten, MoonViT, natives INT4, Modified MIT; Video experimentell, temperature 1.0 / 0.6 und top_p 0.95 empfohlen, Preserve-Thinking standardmäßig aus, „works best with Kimi Code CLI as its agent framework".
-- https://forum.moonshot.ai/t/meet-kimi-k2-6-advancing-open-source-coding/369 — offizielle Ankündigung vom 21.04.2026: 4.000+ Tool-Calls und über 12 Stunden kontinuierliche Ausführung, Agent-Swarm 300 × 4.000 Schritte.
+## Sources
+- https://platform.kimi.ai/docs/models.md — Roster: `kimi-k2.6` "Supports both visual and text input, thinking and non-thinking modes, and dialogue and Agent tasks. Context 256k"; not in deprecation table.
+- https://platform.kimi.ai/docs/api/models-overview.md — Parameter matrix: `thinking` enabled/disabled/`keep: "all"`, no `reasoning_effort`, no `tool_choice: "required"`, fixed temperature 1.0/0.6, fixed top_p/n/penalties; FAQ "Switching from `kimi-k2.6` to `kimi-k3`"; `extra_body` example.
+- https://platform.kimi.ai/docs/guide/kimi-k2-6-quickstart.md — Positioning as general-purpose model, long-horizon coding, default `max_tokens` 32768, default `thinking`, fixed sampling values, `tool_choice` only auto/none with active thinking, retaining `reasoning_content` in tool loops, `$web_search` incompatibility with thinking, no image URLs, 100 MB request limit.
+- https://platform.kimi.ai/docs/guide/use-thinking-models.md — `thinking.type`/`thinking.keep` with defaults, Preserved Thinking, `reasoning_content` + `content` ≤ `max_tokens`, `max_tokens >= 16000` and streaming recommended.
+- https://platform.kimi.ai/docs/guide/response_format.md — K2.6 instability with complex schemas (Markdown code block wrapping, `oneOf`/`$ref`, fields outside schema, empty strings), recommendation of kimi-k2.7-code for structured output, `strict: true`.
+- https://platform.kimi.ai/docs/guide/prompt-best-practice.md — General platform prompting best practices (role, delimiters, steps, few-shots, length controls).
+- https://platform.kimi.ai/docs/guide/tool-call-repeat.md — Message layout check and reminder escalation at 3 / 5 / 8 identical tool calls.
+- https://platform.kimi.ai/docs/pricing/chat-k3.md and https://platform.kimi.ai/docs/guide/context-caching.md — $0.16 / $0.95 / $4.00 per 1M tokens, 262,144-token context; cache write only for kimi-k3, not for kimi-k2.6.
+- https://platform.kimi.ai/docs/guide/use-web-search.md and https://platform.kimi.ai/docs/pricing/websearch.md — `$web_search` deprecated, sunset 2026-10-20; replacements `/v1/tools/search`, `/v1/tools/search_pro`, `/v1/tools/fetch`.
+- https://platform.kimi.ai/docs/api/messages.md and https://platform.kimi.ai/docs/api/responses.md — `model` enum and supported model only `kimi-k3`.
+- https://platform.kimi.ai/docs/platform-changelog.md — April 2026: release of Kimi K2.6 via Open Platform API.
+- https://huggingface.co/moonshotai/Kimi-K2.6 — Official model card: key features (long-horizon coding, coding-driven design, agent swarm 300 × 4,000), 1T / 32B active, 384 experts, MoonViT, native INT4, Modified MIT; experimental video, recommended temperature 1.0 / 0.6 and top_p 0.95, preserve thinking off by default, "works best with Kimi Code CLI as its agent framework".
+- https://forum.moonshot.ai/t/meet-kimi-k2-6-advancing-open-source-coding/369 — Official announcement of 2026-04-21: 4,000+ tool calls and over 12 hours continuous execution, agent swarm 300 × 4,000 steps.

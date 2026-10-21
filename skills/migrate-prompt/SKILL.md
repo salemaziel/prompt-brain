@@ -172,7 +172,7 @@ that generation. Everything else is version-pinned, including `…-latest` strin
 generation (`grok-4-latest`). A preview-only generation gets pinned aliases only; bare and
 rolling aliases follow the vendor's `…-latest` pointer. A guide is `status: legacy` +
 `successor` once the vendor names its successor, lists it as legacy, or retires or
-auto-routes it; support dates go into a `## Migrations-Hinweise` caveat.
+auto-routes it; support dates go into a `## Migration Notes` caveat.
 
 If EITHER model does not resolve to exactly one guide: list the available `id`s from the
 registry, state which argument failed, and STOP without reading any guide file.

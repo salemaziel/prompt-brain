@@ -7,42 +7,46 @@ last_verified: 2026-10-13
 status: current
 ---
 
-# gpt-oss-120b (gilt auch für gpt-oss-20b)
+# gpt-oss-120b (also applies to gpt-oss-20b)
 
 ## Reasoning / Thinking
-- Effort-Stufen `low | medium | high` (beide Größen). Gesetzt wird die Stufe **in der System-Nachricht**, nicht über einen API-Parameter: „To control the reasoning you can specify in the system message the reasoning level as low, medium, or high" — empfohlene Zeile `Reasoning: high`. Default: „By default, the model will do medium level reasoning."
-- Die Chain-of-Thought kommt roh im **`analysis`-Kanal**. Sie unterliegt nicht denselben Sicherheitsstandards wie die finale Antwort: „You should not show the chain-of-thought to your users, as they might contain harmful content."
-- Mehrturn-Regel: „In general, you should drop any previous CoT content on subsequent sampling" — sobald ein Turn mit einer `final`-Nachricht endete. Ausnahme Tool-Calling: vorheriges CoT bleibt im Verlauf, damit das Modell weiterdenken kann.
-- Kein `none`/`minimal`, kein `xhigh`/`max`, kein Token-Budget dokumentiert.
+- Effort levels `low | medium | high` (both sizes). The level is set **in the system message**, not via an API parameter: "To control the reasoning you can specify in the system message the reasoning level as low, medium, or high" — recommended line `Reasoning: high`. Default: "By default, the model will do medium level reasoning."
+- The chain-of-thought arrives raw in the **`analysis` channel**. It is not subject to the same safety standards as the final answer: "You should not show the chain-of-thought to your users, as they might contain harmful content."
+- Multi-turn rule: "In general, you should drop any previous CoT content on subsequent sampling" — once a turn has concluded with a `final` message. Tool calling exception: Previous CoT remains in history so the model can continue reasoning.
+- No `none`/`minimal`, no `xhigh`/`max`, no token budget documented.
 
-## Prompting-Stil
-- **Harmony-Format ist Pflicht**: „gpt-oss should not be used without using the harmony format, as it will not work correctly." Über Inference-Provider (z. B. Ollama) oder eine API wird das Format automatisch gerendert; im eigenen Stack den `openai-harmony`-Renderer bzw. das Transformers-Chat-Template nutzen statt Tokens von Hand zu setzen.
-- **Rollen und Rangfolge**: `system > developer > user > assistant > tool`.
-- **System-Nachricht = Metadaten, nicht der übliche System-Prompt**: Identitätszeile („You are ChatGPT, a large language model trained by OpenAI."), Knowledge-Cutoff, aktuelles Datum, Reasoning-Stufe, gültige Kanäle (`analysis`, `commentary`, `final`) und ggf. eingebaute Tools (`browser`, `python`).
-- **Developer-Nachricht = die eigentlichen Anweisungen**: „It contains the instructions that are provided to the model and optionally a list of function tools available for use." Aufgabeninstruktionen stehen unter `# Instructions`, Function-Tools unter `# Tools`, Output-Schemas unter `# Response Formats`.
-- **Achtung Chat-Template**: „Note that the `Developer` role in Harmony maps to the `system` prompt in the chat template." Wer über das Transformers-Chat-Template (oder einen Provider) arbeitet, schreibt die Anweisungen also in die `system`-Nachricht; nur beim rohen Harmony-Rendering gehören sie in die `developer`-Nachricht.
-- **Function-Tools** werden in einem TypeScript-artigen `namespace functions { … }`-Block deklariert (Kommentare als Beschreibung); das Modell adressiert den Call über `to=functions.<name>` und kann per `<|constrain|>` das Argumentformat (z. B. `json`) festlegen; das Tool-Ergebnis kommt als `tool`-Nachricht an den Assistant im `commentary`-Kanal zurück.
+## Prompting Style
+- **Harmony format is mandatory**: "gpt-oss should not be used without using the harmony format, as it will not work correctly." Through inference providers (e.g. Ollama) or an API, the format is rendered automatically; in your own stack use the `openai-harmony` renderer or the Transformers chat template instead of manually setting tokens.
+- **Roles and precedence**: `system > developer > user > assistant > tool`.
+- **System message = metadata, not the conventional system prompt**: Identity line ("You are ChatGPT, a large language model trained by OpenAI."), knowledge cutoff, current date, reasoning level, valid channels (`analysis`, `commentary`, `final`), and optionally built-in tools (`browser`, `python`).
+- **Developer message = the actual instructions**: "It contains the instructions that are provided to the model and optionally a list of function tools available for use." Task instructions belong under `# Instructions`, function tools under `# Tools`, output schemas under `# Response Formats`.
+- **Note on chat templates**: "Note that the `Developer` role in Harmony maps to the `system` prompt in the chat template." When working via the Transformers chat template (or a provider), instructions are written into the `system` message; they belong in the `developer` message only during raw Harmony rendering.
+- **Function tools** are declared in a TypeScript-like `namespace functions { … }` block (comments as descriptions); the model addresses the call via `to=functions.<name>` and can specify the argument format (e.g. `json`) via `<|constrain|>`; tool results return as a `tool` message to the assistant in the `commentary` channel.
 
-## Stärken & Schwächen (prompt-relevant)
-- Offene Gewichte unter **Apache 2.0**. 120b: 117 B total / 5,1 B aktiv, „Most powerful open-weight model, fits into an H100 GPU" (≥ 60 GB VRAM bzw. Multi-GPU laut Transformers-Guide). 20b: 21 B total / 3,6 B aktiv, „Medium-sized open-weight model for low latency", ca. 16 GB VRAM mit MXFP4. Beide teilen Format, Kanäle, Effort-Regler und Limits — der Prompt-Vertrag ist identisch.
-- **Nur Text** rein und raus; keine Bild- oder Audio-Eingabe. Knowledge-Cutoff **1. Juni 2024** — zeitkritische Fakten im Kontext mitliefern.
-- Schwäche: `# Response Formats` „will, however, only influence the model's behavior but doesn't guarantee the full adherence to the schema" — Schema-Treue im Self-Hosting per constrained Sampling oder Validierung erzwingen.
-- Eingebaute Tools `browser` (search/open/find) und `python` (zustandsbehaftetes Jupyter, 120 s Timeout) existieren nur, wenn der eigene Stack sie implementiert.
-- Benchmark- und Qualitätsvergleiche gegenüber den API-Modellen werden hier nicht behauptet (unbelegt).
+## Strengths & Weaknesses (prompt-relevant)
+- Strengths:
+  - Open weights under **Apache 2.0**.
+  - 120b: 117 B total / 5.1 B active, "Most powerful open-weight model, fits into an H100 GPU" (≥ 60 GB VRAM or multi-GPU according to Transformers guide).
+  - 20b: 21 B total / 3.6 B active, "Medium-sized open-weight model for low latency", approx. 16 GB VRAM with MXFP4. Both share format, channels, effort controls, and limits — the prompt contract is identical.
+- Weaknesses:
+  - **Text only** input and output; no image or audio input. Knowledge cutoff **June 1, 2024** — supply time-critical facts in context.
+  - `# Response Formats` "will, however, only influence the model's behavior but doesn't guarantee the full adherence to the schema" — enforce schema adherence in self-hosting via constrained sampling or validation.
+  - Built-in tools `browser` (search/open/find) and `python` (stateful Jupyter, 120 s timeout) exist only if your own stack implements them.
+  - Benchmark and quality comparisons against API models are not asserted here (unbelegt).
 
-## Output- & Format-Konventionen
-- Drei Kanäle: **`final`** = einzig für den Endnutzer bestimmt; **`analysis`** = CoT, nie anzeigen; **`commentary`** = Function-Tool-Calls (meist auch Built-in-Calls) und gelegentlich Preambles, die vor mehreren Tool-Calls den Plan beschreiben.
-- Stop-Tokens: `<|return|>` = finale Antwort fertig, `<|call|>` = Tool-Call; `<|end|>` schließt einzelne Nachrichten. Beim Speichern in den Verlauf das abschließende `<|return|>` durch `<|end|>` ersetzen.
-- Kontextfenster **131.072** Tokens, max. Output **131.072** (beide Größen).
-- OpenAI-API-Seite: Endpunkte Responses und Batch (kein Chat Completions), Features Streaming, Structured Outputs, Function Calling; Tools Function Calling, Code Interpreter, MCP, Web Search. Einziger Snapshot `gpt-oss-120b` bzw. `gpt-oss-20b`.
+## Output & Format Conventions
+- Three channels: **`final`** = intended solely for the end user; **`analysis`** = CoT, never display; **`commentary`** = function tool calls (usually built-in calls as well) and occasionally preambles describing the plan before multiple tool calls.
+- Stop tokens: `<|return|>` = final response complete, `<|call|>` = tool call; `<|end|>` closes individual messages. When storing in conversation history, replace the concluding `<|return|>` with `<|end|>`.
+- Context window **131,072** tokens, max output **131,072** (both sizes).
+- OpenAI API page: Endpoints Responses and Batch (no Chat Completions), features Streaming, Structured Outputs, Function Calling; tools Function Calling, Code Interpreter, MCP, Web Search. Single snapshot `gpt-oss-120b` or `gpt-oss-20b`.
 
-## Migrations-Hinweise
-- **ZU gpt-oss migrieren**: Der zentrale Schritt ist die Rollen-Umverteilung — Aufgabeninstruktionen, Persona und Regeln aus dem bisherigen System-Prompt in die Developer-Rolle (`# Instructions`) verschieben; die System-Nachricht nur noch für Metadaten und `Reasoning: <level>` nutzen. Beim Chat-Template/Provider landet die `system`-Nachricht automatisch in der Developer-Rolle. Tool-Schemas in die `# Tools`-Sektion der Developer-Nachricht, Output-Schemas nach `# Response Formats` (plus Validierung). API-Effort-Parameter (`reasoning.effort`, Thinking-Budgets) durch die `Reasoning:`-Zeile ersetzen; `xhigh`/`max` auf `high`, `none`/`minimal` auf `low` abbilden. Ob manuelles „Denke Schritt für Schritt"-Scaffolding neben dem Analysis-Kanal noch nützt, ist nicht dokumentiert (unbelegt). Bild-/Audio-Inputs und sehr lange Kontexte (> 131K) müssen anders gelöst werden.
-- **Verfügbarkeit**: primär offene Gewichte (Download über Hugging Face, verlinkt auf der Modellseite). Die OpenAI-API-Ratenlimit-Tabelle zeigt für Build, Launch und Grow **0 RPM / 0 TPM** — produktiven Betrieb über die OpenAI-API nicht voraussetzen.
-- **VON gpt-oss weg**: Harmony-Tokens, Kanal-Parsing und CoT-Stripping-Logik entfernen; Developer-Anweisungen zurück in den System-Prompt bzw. die Instruktions-Rolle des Zielanbieters ziehen; `Reasoning:`-Zeile in den Effort-/Thinking-Parameter des Ziels übersetzen; `namespace functions`-Deklarationen in JSON-Schema-Tools umschreiben; `# Response Formats` durch native Structured Outputs ersetzen; die Identitätszeile „You are ChatGPT …" nicht übernehmen.
+## Migration Notes
+- **MIGRATING TO gpt-oss**: The central step is role reallocation — move task instructions, persona, and rules from the previous system prompt into the Developer role (`# Instructions`); use the system message only for metadata and `Reasoning: <level>`. When using chat templates / providers, the `system` message automatically lands in the Developer role. Place tool schemas into the `# Tools` section of the developer message, and output schemas under `# Response Formats` (plus validation). Replace API effort parameters (`reasoning.effort`, thinking budgets) with the `Reasoning:` line; map `xhigh`/`max` to `high`, `none`/`minimal` to `low`. Whether manual "think step by step" scaffolding alongside the analysis channel provides any benefit is not documented (unbelegt). Image/audio inputs and very long contexts (> 131K) must be handled differently.
+- **Availability**: Primarily open weights (download via Hugging Face, linked on the model page). The OpenAI API rate limit table shows **0 RPM / 0 TPM** for Build, Launch, and Grow — do not assume production availability via the OpenAI API.
+- **MIGRATING FROM gpt-oss**: Remove Harmony tokens, channel parsing, and CoT-stripping logic; pull developer instructions back into the system prompt or instruction role of the target provider; translate the `Reasoning:` line into the target's effort/thinking parameter; rewrite `namespace functions` declarations into JSON Schema tools; replace `# Response Formats` with native Structured Outputs; do not carry over the identity line "You are ChatGPT …".
 
-## Quellen
-- https://developers.openai.com/api/docs/models/gpt-oss-120b — „Most powerful open-weight model, fits into an H100 GPU", Apache 2.0, 117 B / 5,1 B aktiv, 131.072 Kontext und Output, Cutoff 1. Juni 2024, Effort low/medium/high, Text→Text, Endpunkte Responses + Batch, Features/Tools, Ratenlimits 0 RPM / 0 TPM, Snapshot, kein Deprecation-Hinweis, Hugging-Face-Download.
-- https://developers.openai.com/api/docs/models/gpt-oss-20b — „Medium-sized open-weight model for low latency", 21 B / 3,6 B aktiv, gleiche Limits, Effort-Stufen, Endpunkte und Ratenlimits wie 120b.
-- https://developers.openai.com/cookbook/articles/openai-harmony — Harmony-Pflicht, Rollen-Rangfolge, Inhalte von System- und Developer-Nachricht, `Reasoning: high`, Default medium, Kanäle final/analysis/commentary, CoT nicht anzeigen und im Folgeturn droppen (Tool-Ausnahme), `namespace functions`, `<|constrain|>`, Response Formats ohne Garantie, Built-in-Tools, Stop-Tokens.
-- https://developers.openai.com/cookbook/articles/gpt-oss/run-transformers — Chat-Template rendert Harmony, „`Developer` role in Harmony maps to the `system` prompt in the chat template", VRAM-Bedarf (20b ca. 16 GB MXFP4, 120b ≥ 60 GB / eine H100).
+## Sources
+- https://developers.openai.com/api/docs/models/gpt-oss-120b — "Most powerful open-weight model, fits into an H100 GPU", Apache 2.0, 117 B / 5.1 B active, 131,072 context and output, cutoff June 1, 2024, effort low/medium/high, text→text, endpoints Responses + Batch, features/tools, rate limits 0 RPM / 0 TPM, snapshot, no deprecation notice, Hugging Face download.
+- https://developers.openai.com/api/docs/models/gpt-oss-20b — "Medium-sized open-weight model for low latency", 21 B / 3.6 B active, same limits, effort levels, endpoints, and rate limits as 120b.
+- https://developers.openai.com/cookbook/articles/openai-harmony — Harmony requirement, role hierarchy, contents of system and developer messages, `Reasoning: high`, default medium, channels final/analysis/commentary, do not display CoT and drop in subsequent turn (tool exception), `namespace functions`, `<|constrain|>`, response formats without guarantee, built-in tools, stop tokens.
+- https://developers.openai.com/cookbook/articles/gpt-oss/run-transformers — Chat template renders Harmony, "`Developer` role in Harmony maps to the `system` prompt in the chat template", VRAM requirements (20b approx. 16 GB MXFP4, 120b ≥ 60 GB / single H100).

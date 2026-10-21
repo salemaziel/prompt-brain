@@ -10,48 +10,48 @@ status: current
 # Grok 4.7
 
 ## Reasoning / Thinking
-- Typ: **immer an**. Die Reasoning-Seite führt grok-4.7 mit „Reasoning cannot be disabled" — es gibt kein `none` (anders als bei grok-4.3).
-- Leiter: `reasoning.effort` (Responses API) bzw. `reasoning_effort` = `low | medium | high | xhigh`, **Default `high`**. `xhigh` steuert hier echte Denktiefe („available on `grok-4.6` and later") — „Maximum reasoning depth, with correspondingly higher latency".
-- Einsatz laut Doku: `low` für latenzsensitive Agentic-Loops und einfaches Tool-Calling, `medium` für Datenanalyse und Long-Context-Reasoning, `high` für schwere Mathe-/Multi-Step-Probleme, `xhigh` für die härtesten Fälle. Der Best-Practices-Guide verlangt, den Effort **bei jedem Request explizit** zu setzen, statt einen Default entscheiden zu lassen.
-- **Lesbare Reasoning-Summaries** dokumentiert xAI ausschließlich für grok-4.7 (Streaming-Deltas `response.reasoning_summary_text.delta`).
-- **Verschlüsseltes Reasoning kommt immer zurück:** Auf der Responses API liefert grok-4.7 `reasoning.encrypted_content` bei jeder Antwort, auch ohne `include`. Die Reasoning-Items müssen unverändert im `input` des nächsten Requests zurückgeschickt werden, sonst verliert das Modell seinen Denkweg und der Prompt-Cache bricht. Chat Completions hat dafür kein Feld.
-- Reasoning-Tokens werden mitabgerechnet (`reasoning_tokens` in `usage`). `presencePenalty`, `frequencyPenalty` und `stop` liefern einen Fehler.
+- Type: **always on**. The reasoning page lists grok-4.7 with "Reasoning cannot be disabled" — there is no `none` (unlike grok-4.3).
+- Ladder: `reasoning.effort` (Responses API) or `reasoning_effort` = `low | medium | high | xhigh`, **default `high`**. `xhigh` controls genuine thinking depth here ("available on `grok-4.6` and later") — "Maximum reasoning depth, with correspondingly higher latency".
+- Usage according to docs: `low` for latency-sensitive agentic loops and simple tool calling, `medium` for data analysis and long-context reasoning, `high` for hard math/multi-step problems, `xhigh` for the hardest cases. The Best Practices Guide requires setting effort **explicitly on every request** rather than letting a default decide.
+- **Readable reasoning summaries** are documented by xAI exclusively for grok-4.7 (streaming deltas `response.reasoning_summary_text.delta`).
+- **Encrypted reasoning is always returned:** On the Responses API, grok-4.7 returns `reasoning.encrypted_content` on every response, even without `include`. Reasoning items must be returned unchanged in the `input` of the next request, otherwise the model loses its thinking process and the prompt cache breaks. Chat Completions has no field for this.
+- Reasoning tokens are billed (`reasoning_tokens` in `usage`). `presencePenalty`, `frequencyPenalty`, and `stop` return an error.
 
-## Prompting-Stil
-- Positionierung: „frontier model for coding, agentic tasks, and knowledge work"; xAI empfiehlt grok-4.7 für Code **und** Chat („It is the most capable model we've built").
-- Best-Practices-Guide: Aufgabe, Constraints und Output-Format **direkt benennen** („state the task, constraints, and output format directly"); einen für ein anderes Modell getunten Prompt gezielt für Grok nachtunen.
-- **Responses API verwenden** — Chat Completions gilt laut Guide als „deprecated" und verwirft über Turns hinweg das verschlüsselte Reasoning.
-- Sampling: `temperature` 0.7 und `top_p` 0.95 explizit setzen und kaum davon abweichen („Grok models don't respond well to other sampling settings").
-- Caching: `prompt_cache_key` (Responses API) bzw. `x-grok-conv-id` (Chat Completions) pro Konversation setzen; statische Inhalte (System-Prompt, Few-Shots, Referenzdokumente) nach vorn, die Konversation nur anhängen statt umzuordnen. Für lange Agent-Loops zusätzlich Context Compaction.
-- Laut Ankündigung arbeitet das Modell länger an schweren Aufgaben und prüft seine Arbeit sorgfältiger — Planung und Selbstprüfung dürfen dem Modell überlassen werden. Eine modellspezifische Prompting-Anleitung über den Best-Practices-Guide hinaus gibt es nicht; weitergehende Stilregeln sind (unbelegt).
+## Prompting Style
+- Positioning: "frontier model for coding, agentic tasks, and knowledge work"; xAI recommends grok-4.7 for code **and** chat ("It is the most capable model we've built").
+- Best Practices Guide: **State task, constraints, and output format directly** ("state the task, constraints, and output format directly"); specifically retune a prompt tuned for another model for Grok.
+- **Use the Responses API** — Chat Completions is considered "deprecated" according to the guide and discards encrypted reasoning across turns.
+- Sampling: Explicitly set `temperature` 0.7 and `top_p` 0.95 and rarely deviate from them ("Grok models don't respond well to other sampling settings").
+- Caching: Set `prompt_cache_key` (Responses API) or `x-grok-conv-id` (Chat Completions) per conversation; place static content (system prompt, few-shots, reference documents) at the front, only appending the conversation rather than reordering it. For long agent loops, additionally use Context Compaction.
+- According to the announcement, the model works longer on difficult tasks and checks its work more carefully — planning and self-verification can be left to the model. There is no model-specific prompting guide beyond the Best Practices Guide; further style rules are (unbelegt).
 
-## Stärken & Schwächen (prompt-relevant)
-- Stärken: laut Ankündigung neues, größeres Basismodell als grok-4.6 mit längerem RL-Lauf auf Aufgaben über viele Stunden; besser im Verifizieren eigener Arbeit und im Umgang mit langem Kontext; bessere Dokument- und Präsentationserstellung; gleicher Preis und gleiche Geschwindigkeit wie grok-4.6; volle Flaggschiff-Durchsatzdecke (150 rps / 50M tpm).
-- Vom Hersteller genannte Benchmarks (nicht unabhängig verifiziert, `xhigh`): CursorBench 4.0 46,3 %, Terminal-Bench 4.0 37,6 %, Harvey Legal Agent Benchmark 19,6 %; DeepSWE v1.1 71,0 % (bei `high`).
-- Schwächen/Eigenheiten: Reasoning nicht abschaltbar (feste Latenz-/Kostenuntergrenze); **Preisklippe bei 200k Prompt-Tokens** — ab da gilt der doppelte Satz für alle Tokens des Requests; **Batch API „Not supported"**; keine EU-Region.
+## Strengths & Weaknesses (prompt-relevant)
+- Strengths: According to the announcement, a new, larger base model than grok-4.6 with a longer RL run on tasks spanning many hours; better at verifying its own work and handling long context; superior document and presentation creation; same price and speed as grok-4.6; full flagship throughput ceiling (150 rps / 50M tpm).
+  - Vendor-reported benchmarks (not independently verified, `xhigh`): CursorBench 4.0 46.3%, Terminal-Bench 4.0 37.6%, Harvey Legal Agent Benchmark 19.6%; DeepSWE v1.1 71.0% (at `high`).
+- Weaknesses: Reasoning cannot be disabled (fixed latency/cost floor); **price cliff at 200k prompt tokens** — above that, double rates apply to all tokens of the request; **Batch API "Not supported"**; no EU region.
 
-## Output- & Format-Konventionen
-- 500.000 Tokens Kontext; Input Text + Bild, Output nur Text; „No text output limit". Knowledge Cutoff Mai 2026.
-- `max_output_tokens` begrenzt nur die sichtbare Antwort (Reasoning zählt nicht), Default 128.000; Responses mit `status: "incomplete"` als abgeschnitten behandeln. Länge nicht über `stop` steuern.
-- Function Calling, Structured Outputs und Reasoning: jeweils ja; server-seitige Tools Web Search, X Search und Code Execution. Echtzeitwissen nur mit aktivierten Such-Tools.
-- Preise pro 1M Tokens: Input $2.00 (<200k) / $4.00 (≥200k), Cached Input $0.50 / $1.00, Output $6.00 / $12.00. Rate Limits 150 rps / 50M tpm. Regionen us-east-1, us-west-2, us-central-1; zusätzlich US-Regional-Endpoint `https://us.api.x.ai/v1` (+10 % Tokenpreis).
-- „Grok 4.7 Fast" (gleiches Modell, doppelter Preis) gibt es nur in Cursor und Grok Build, **nicht** auf der öffentlichen xAI-API.
-- Die Modellseite listet keine Aliase; `grok-4.7-latest` ist nur Repo-Komfort nach xAIs `<modelname>-latest`-Konvention, die blanke ID `grok-4.7` ist die belegte Adresse.
+## Output & Format Conventions
+- 500,000 tokens context; input text + image, output text only; "No text output limit". Knowledge cutoff May 2026.
+- `max_output_tokens` limits only the visible response (reasoning does not count), default 128,000; treat responses with `status: "incomplete"` as truncated. Do not control length via `stop`.
+- Function calling, Structured Outputs, and reasoning: yes for each; server-side tools Web Search, X Search, and Code Execution. Real-time knowledge only with enabled search tools.
+- Prices per 1M tokens: input $2.00 (<200k) / $4.00 (≥200k), cached input $0.50 / $1.00, output $6.00 / $12.00. Rate limits 150 rps / 50M tpm. Regions us-east-1, us-west-2, us-central-1; additionally US regional endpoint `https://us.api.x.ai/v1` (+10% token price).
+- "Grok 4.7 Fast" (same model, double price) exists only in Cursor and Grok Build, **not** on the public xAI API.
+- The model page lists no aliases; `grok-4.7-latest` is repo convenience following xAI's `<modelname>-latest` convention, the bare ID `grok-4.7` is the verified address.
 
-## Migrations-Hinweise
-- **VON grok-4.6 zu grok-4.7**: Preis, Kontext (500k), Effort-Leiter und Default (`high`) sind identisch — Effort-Werte können übernommen werden. Neu: Reasoning-Summaries beim Streaming und auf der Responses API immer mitgeliefertes `reasoning.encrypted_content`; Clients, die History selbst führen, müssen die Reasoning-Items unverändert zurückspielen. Wissensstand ist neu dokumentiert (Mai 2026).
-- **VON grok-4.3 / grok-4.5 zu grok-4.7**: (1) `none` existiert nicht — Zero-Thinking-Pfade auf `low` heben und Latenz/Kosten neu rechnen. (2) Default springt bei grok-4.3 von `low` auf `high`; ohne explizites `reasoning_effort` steigen Kosten und Latenz. (3) Von grok-4.3 kommend: Kontext schrumpft von 1M auf 500k, eu-west-1 und der 20-%-Batch-Rabatt entfallen, Preis steigt auf $2.00/$6.00. (4) Von grok-4.5 kommend: `xhigh` wird jetzt real ausgeführt — Kosten neu messen.
-- **ZU grok-4.7 allgemein**: `presence_penalty`/`frequency_penalty`/`stop` entfernen, Formatkontrolle über Structured Outputs; auf die Responses API umstellen; `temperature` 0.7 / `top_p` 0.95 setzen; `prompt_cache_key` ergänzen; Prompts unter der 200k-Klippe halten.
-- **VON grok-4.7 weg**: Pipelines, die Summaries oder das automatisch gelieferte verschlüsselte Reasoning auswerten, umbauen; bei grok-4.5 wird `xhigh` laut Reasoning-Seite still als `high` behandelt.
+## Migration Notes
+- **MIGRATING FROM grok-4.6** to grok-4.7: Price, context (500k), effort ladder, and default (`high`) are identical — effort values can be carried over. New: reasoning summaries during streaming and always-supplied `reasoning.encrypted_content` on the Responses API; clients managing history themselves must return reasoning items unchanged. Knowledge cutoff is newly documented (May 2026).
+- **MIGRATING FROM grok-4.3 / grok-4.5** to grok-4.7: (1) `none` does not exist — raise zero-thinking paths to `low` and recalculate latency/cost. (2) Default jumps from `low` to `high` when coming from grok-4.3; without explicit `reasoning_effort`, cost and latency increase. (3) Coming from grok-4.3: context shrinks from 1M to 500k, eu-west-1 and 20% batch discount are eliminated, price increases to $2.00/$6.00. (4) Coming from grok-4.5: `xhigh` is now genuinely executed — remeasure costs.
+- **MIGRATING TO grok-4.7** (general): Remove `presence_penalty`/`frequency_penalty`/`stop`, enforcing format control via Structured Outputs; transition to the Responses API; set `temperature` 0.7 / `top_p` 0.95; add `prompt_cache_key`; keep prompts below the 200k cliff.
+- **MIGRATING FROM grok-4.7**: Rebuild pipelines that evaluate summaries or automatically returned encrypted reasoning; on grok-4.5, `xhigh` is silently treated as `high` according to the reasoning page.
 
-## Quellen
-- https://docs.x.ai/developers/models/grok-4.7 — Modellseite: id `grok-4.7` ohne Aliase, 500k Kontext, Text+Bild→Text, Function Calling/Structured Outputs/Reasoning ja, Efforts `low`/`medium`/`high`/`xhigh` mit Default `high`, Batch API „Not supported", Preistabelle mit 200k-Staffel, 150 rps / 50M tpm, Regionen us-east-1/us-west-2/us-central-1.
-- https://docs.x.ai/developers/grok-4-7 — Entwicklerseite: Knowledge Cutoff Mai 2026, „No text output limit", Tools, `prompt_cache_key`-Empfehlung, Context Compaction, immer zurückgegebenes `reasoning.encrypted_content`, Fast-Variante nur in Cursor/Grok Build, US-Endpoint +10 %, Default-Modell von Grok Build.
-- https://docs.x.ai/developers/model-capabilities/text/reasoning — „Reasoning cannot be disabled", Effort-Tabelle und Einsatzempfehlungen, `xhigh` ab grok-4.6, Summaries nur für grok-4.7, „Always returned for grok-4.7", Fehler bei `presencePenalty`/`frequencyPenalty`/`stop`, Abrechnung der Reasoning-Tokens.
-- https://docs.x.ai/developers/model-capabilities/text/best-practices — Responses API statt (deprecated) Chat Completions, Reasoning-Items zurückspielen, Effort explizit setzen, `temperature` 0.7 / `top_p` 0.95, `max_output_tokens`-Default 128.000, Task/Constraints/Format direkt benennen, Caching-Regeln.
-- https://docs.x.ai/developers/models — Empfehlung „Code: Grok 4.7 / Chat: Grok 4.7", Cutoff Mai 2026, Preistabelle, Alias-Konvention, Echtzeitwissen nur mit Such-Tools.
-- https://docs.x.ai/developers/release-notes — Eintrag „Grok 4.7" (September): Verfügbarkeit als `grok-4.7`, Preise, Effort-Leiter, immer zurückgegebenes verschlüsseltes Reasoning, US-Endpoint, Fast-Variante.
-- https://x.ai/news/grok-4-7 — Ankündigung vom 21.09.2026: größeres Basismodell, längerer RL-Lauf, bessere Selbstprüfung und Long-Context-Handhabung, gleicher Preis/Speed wie grok-4.6, Herstellerbenchmarks.
-- https://docs.x.ai/developers/advanced-api-usage/regions — US-Endpoint `https://us.api.x.ai/v1` bedient grok-4.7 und grok-4.6, Tokenpreis +10 %.
-- https://docs.x.ai/developers/advanced-api-usage/prompt-caching/maximizing-cache-hits — `x-grok-conv-id` bzw. `prompt_cache_key` routen eine Konversation auf denselben Server.
-- https://docs.x.ai/developers/advanced-api-usage/context-compaction — Context Compaction für lange Agent-Loops.
+## Sources
+- https://docs.x.ai/developers/models/grok-4.7 — Model page: id `grok-4.7` without aliases, 500k context, text+image→text, function calling/Structured Outputs/reasoning yes, efforts `low`/`medium`/`high`/`xhigh` with default `high`, Batch API "Not supported", pricing table with 200k tier, 150 rps / 50M tpm, regions us-east-1/us-west-2/us-central-1.
+- https://docs.x.ai/developers/grok-4-7 — Developer page: knowledge cutoff May 2026, "No text output limit", tools, `prompt_cache_key` recommendation, Context Compaction, always-returned `reasoning.encrypted_content`, Fast variant only in Cursor/Grok Build, US endpoint +10%, default model of Grok Build.
+- https://docs.x.ai/developers/model-capabilities/text/reasoning — "Reasoning cannot be disabled", effort table and usage recommendations, `xhigh` starting from grok-4.6, summaries only for grok-4.7, "Always returned for grok-4.7", error on `presencePenalty`/`frequencyPenalty`/`stop`, billing of reasoning tokens.
+- https://docs.x.ai/developers/model-capabilities/text/best-practices — Responses API instead of (deprecated) Chat Completions, returning reasoning items, set effort explicitly, `temperature` 0.7 / `top_p` 0.95, `max_output_tokens` default 128,000, state task/constraints/format directly, caching rules.
+- https://docs.x.ai/developers/models — Recommendation "Code: Grok 4.7 / Chat: Grok 4.7", cutoff May 2026, pricing table, alias convention, real-time knowledge only with search tools.
+- https://docs.x.ai/developers/release-notes — Entry "Grok 4.7" (September): availability as `grok-4.7`, prices, effort ladder, always-returned encrypted reasoning, US endpoint, Fast variant.
+- https://x.ai/news/grok-4-7 — Announcement of 09/21/2026: larger base model, longer RL run, better self-verification and long-context handling, same price/speed as grok-4.6, vendor benchmarks.
+- https://docs.x.ai/developers/advanced-api-usage/regions — US endpoint `https://us.api.x.ai/v1` serves grok-4.7 and grok-4.6, token price +10%.
+- https://docs.x.ai/developers/advanced-api-usage/prompt-caching/maximizing-cache-hits — `x-grok-conv-id` or `prompt_cache_key` route a conversation to the same server.
+- https://docs.x.ai/developers/advanced-api-usage/context-compaction — Context Compaction for long agent loops.

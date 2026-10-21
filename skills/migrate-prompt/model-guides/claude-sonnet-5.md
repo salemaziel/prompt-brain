@@ -11,46 +11,46 @@ successor: claude-sonnet-5-5
 # Claude Sonnet 5
 
 ## Reasoning / Thinking
-- Typ: **adaptiv, per Default an**. Requests ohne `thinking`-Feld denken — Änderung gegenüber Sonnet 4.6, wo dieselben Requests ohne Thinking liefen. Abschalten mit `thinking: {type: "disabled"}` (ohne effort-Deckel, anders als bei Opus 5).
-- `thinking: {type: "enabled", budget_tokens: N}` ist entfernt (400) — auf Sonnet 4.6 nur deprecated, hier keine Übergangslösung mehr. Tiefe über `output_config.effort`.
-- effort-Stufen `low | medium | high | xhigh | max`, Default `high` (wie Sonnet 4.6); `xhigh` ist neu in der Sonnet-Klasse. Grobe Migrations-Zuordnung: Sonnet 5 auf `medium` ≈ Sonnet 4.6 auf `high`; Sonnet 5 auf `high` ≈ Sonnet 4.6 auf `max`.
-- Effort-Stufen werden strikt befolgt, besonders am unteren Ende: bei `low`/`medium` bearbeitet das Modell nur das Verlangte. Bei flachem Reasoning effort erhöhen statt darum herum zu prompten.
-- Sampling-Parameter `temperature`/`top_p`/`top_k` auf Nicht-Default-Werten → 400 (neu für die Sonnet-Klasse).
-- `max_tokens` deckelt Thinking **plus** Antworttext: bei knappem Budget droht eine fast nur aus Thinking bestehende, abgeschnittene Antwort mit `stop_reason: "max_tokens"`.
+- Type: **adaptive, on by default**. Requests without a `thinking` field engage in thinking — a change compared to Sonnet 4.6, where the same requests ran without thinking. Disable with `thinking: {type: "disabled"}` (without an effort cap, unlike Opus 5).
+- `thinking: {type: "enabled", budget_tokens: N}` has been removed (400) — only deprecated on Sonnet 4.6, here no longer available as a transitional solution. Control depth via `output_config.effort`.
+- Effort levels: `low | medium | high | xhigh | max`, default `high` (same as Sonnet 4.6); `xhigh` is newly introduced to the Sonnet family. Rough migration mapping: Sonnet 5 at `medium` ≈ Sonnet 4.6 at `high`; Sonnet 5 at `high` ≈ Sonnet 4.6 at `max`.
+- Effort levels are strictly followed, especially at the lower end: at `low`/`medium`, the model addresses only what was requested. For shallow reasoning, increase effort rather than attempting to prompt around it.
+- Sampling parameters `temperature`/`top_p`/`top_k` at non-default values → 400 (new for the Sonnet family).
+- `max_tokens` caps thinking **plus** response text: with a tight budget, there is a risk of a truncated response consisting almost entirely of thinking ending with `stop_reason: "max_tokens"`.
 
-## Prompting-Stil
-- **Wörtliches Instruction-Following**, besonders bei niedrigem effort: keine stillschweigende Generalisierung, keine Ableitung ungestellter Anforderungen. Soll eine Regel breit gelten, den Geltungsbereich ausschreiben („auf jeden Abschnitt, nicht nur den ersten").
-- **Verbosity ist aufgabenkalibriert** statt fix — kurze Antworten auf einfache Lookups, lange auf offene Analysen. Für feste Produktlängen explizit prompten; positive Beispiele der gewünschten Knappheit wirken besser als Negativ-Anweisungen.
-- **Progress-Scaffolding streichen**: erzwungene Zwischenstands-Meldungen („nach je 3 Tool-Calls zusammenfassen") sind überflüssig; passt die Form nicht, Updates explizit beschreiben und Beispiele geben.
-- **Tool-Nutzung**: von Haus aus agentischer als Sonnet 4.6 (greift bereitwilliger zu Tools und Self-Verification-Schleifen). **Mit abgeschaltetem Thinking** greift es seltener zu Tools — dann expliziten Nudge im System-Prompt ergänzen. `high`/`xhigh` erhöhen die Tool-Nutzung deutlich.
-- **Adaptive-Thinking-Trigger ist steuerbar**: bei zu häufigen Thinking-Blöcken (kommt bei großen/komplexen System-Prompts vor) per Prompt gegensteuern und die Wirkung messen.
-- **Tonalität**: Prosastil verschiebt sich gegenüber 4.6; Style-Prompts gegen die neue Baseline neu bewerten. Wer bisher `temperature` für stilistische Varianz nutzte, muss auf System-Prompt-Anweisungen umstellen.
-- **Frontend/Design**: neigt bei offenen Briefs zu einem festen Default-Stil. Generische Verbote verschieben ihn nur; wirksam sind entweder eine konkrete Spezifikation (Palette, Typo, Layout) oder „erst 4 Richtungen vorschlagen, dann eine umsetzen" — Letzteres ist mangels `temperature` der empfohlene Weg zu Varianz.
-- **Interaktive Coding-Produkte**: `xhigh`/`high`, autonome Modi ergänzen und nötige Nutzerinteraktionen reduzieren; Aufgabe, Absicht und Constraints im ersten Turn vollständig angeben.
+## Prompting Style
+- **Literal instruction following**, especially at low effort: no silent generalization, no derivation of unstated requirements. If a rule should apply broadly, spell out the scope ("apply to every section, not just the first").
+- **Verbosity is task-calibrated** rather than fixed — concise answers for simple lookups, detailed for open analyses. Prompt explicitly for fixed product lengths; positive examples of desired brevity work better than negative constraints.
+- **Omit progress scaffolding**: forced intermediate status reports ("summarize after every 3 tool calls") are unnecessary; if format does not fit, describe updates explicitly and provide examples.
+- **Tool usage**: more agentic by default than Sonnet 4.6 (readier to use tools and self-verification loops). **With thinking disabled**, it calls tools less frequently — add an explicit nudge in the system prompt. `high`/`xhigh` increase tool usage significantly.
+- **Adaptive thinking triggering is steerable**: for overly frequent thinking blocks (can occur with large/complex system prompts), steer via prompt and measure results.
+- **Tone**: prose style shifts compared to 4.6; re-evaluate style prompts against the new baseline. Those previously using `temperature` for stylistic variance must switch to system prompt instructions.
+- **Frontend / Design**: tends toward a fixed default style in open briefs. Generic prohibitions merely shift it; effective approaches are either concrete specifications (palette, typography, layout) or "propose 4 directions first, then implement one" — the latter is the recommended path to variance given the lack of `temperature`.
+- **Interactive coding products**: `xhigh`/`high`, add autonomous modes and reduce necessary user interactions; specify task, intent, and constraints fully in the first turn.
 
-## Stärken & Schwächen (prompt-relevant)
-- Stärken: Coding und agentische Aufgaben (größter Zuwachs gegenüber Sonnet 4.6); läuft auf bestehenden Sonnet-4.6-Prompts out of the box; hochauflösende Vision; Computer Use mit `computer_20251124` bis 2576px / 3,75 MP (1080p als guter Performance-/Kosten-Kompromiss, 720p oder 1366×768 für kostensensible Fälle).
-- Schwächen/Eigenheiten: Severity-Filter im Review-Prompt („nur high-severity", „be conservative") werden treuer befolgt als früher — Precision steigt, gemessener Recall kann sinken, obwohl die Bug-Findung besser ist. Gegenmittel: alles melden lassen (mit Confidence + Severity) und in einem separaten Schritt filtern.
-- Risiko des Under-Thinking bei `low` auf mittelschweren Aufgaben.
+## Strengths & Weaknesses (prompt-relevant)
+- Strengths: coding and agentic tasks (largest improvement over Sonnet 4.6); runs on existing Sonnet 4.6 prompts out of the box; high-resolution vision; Computer Use with `computer_20251124` up to 2576px / 3.75 MP (1080p as a good performance/cost compromise, 720p or 1366×768 for cost-sensitive cases).
+- Weaknesses / quirks: severity filters in review prompts ("high-severity only", "be conservative") are followed more faithfully than before — precision increases, measured recall may drop even though bug-finding is improved. Countermeasure: instruct model to report everything (with confidence + severity) and filter in a separate step.
+- Risk of under-thinking at `low` on moderately difficult tasks.
 
-## Output- & Format-Konventionen
-- 1M-Kontextfenster, 128k Output-Tokens; über die Message-Batches-API bis 300k Output mit Beta-Header `output-300k-2026-03-24`.
-- **Neuer Tokenizer**: derselbe Text ergibt rund 30 % mehr Tokens als auf Sonnet 4.6 (inhaltsabhängig). Für 4.6 getunte `max_tokens`-Limits können äquivalente Ausgaben abschneiden; Token-Zählungen und Kosten-Baselines neu erheben.
-- `thinking.display` steht per Default auf `"omitted"` (Sonnet 4.6: `"summarized"`) — wer Reasoning streamt, muss `display: "summarized"` explizit setzen.
-- Kein Assistant-Prefill — Structured Outputs (`output_config.format`) oder System-Prompt-Anweisungen nutzen.
-- Preis laut Modelltabelle $2 / MTok Input, $10 / MTok Output; Reliable Knowledge Cutoff Januar 2026.
-- Mid-Conversation-System-Messages (`role: "system"` innerhalb von `messages`) werden auf Sonnet 5 **nicht** unterstützt — dort bleibt der Top-Level-`system`-Prompt der Weg. Ebenso fehlen Per-Message-Effort und Mid-Conversation-Tool-Changes; ein effort-Wechsel geht nur über den Top-Level-Wert und startet den Prompt-Cache neu.
-- Minimal cachebarer Prompt: 1.024 Tokens.
+## Output & Format Conventions
+- 1M context window, 128k output tokens; up to 300k output via Message Batches API with beta header `output-300k-2026-03-24`.
+- **New tokenizer**: the same text yields roughly 30% more tokens than on Sonnet 4.6 (content-dependent). Limits tuned for 4.6 may truncate equivalent outputs; re-establish token counts and cost baselines.
+- `thinking.display` defaults to `"omitted"` (Sonnet 4.6: `"summarized"`) — those streaming reasoning must set `display: "summarized"` explicitly.
+- No assistant prefill — use Structured Outputs (`output_config.format`) or system prompt instructions.
+- Pricing according to model table: $2 / MTok input, $10 / MTok output; reliable knowledge cutoff January 2026.
+- Mid-conversation system messages (`role: "system"` within `messages`) are **not** supported on Sonnet 5 — the top-level `system` prompt remains the standard approach there. Likewise, per-message effort and mid-conversation tool changes are absent; changing effort is only possible via the top-level parameter and restarts the prompt cache.
+- Minimum cacheable prompt: 1,024 tokens.
 
-## Migrations-Hinweise
-- **VON Sonnet 5 weg**: Geltungsbereiche, die wegen der Wörtlichkeit ausgeschrieben wurden, können beim Zielmodell wieder knapper sein; Tonalitäts- und Varianz-Instruktionen neu bewerten (ggf. wieder `temperature` statt Prompt); Tokenizer-abhängige `max_tokens`-Werte neu bemessen; `xhigh` ist außerhalb der aktuellen Generation oft nicht verfügbar.
-- **ZU Sonnet 5 migrieren**: `budget_tokens` durch adaptives Thinking + `effort` ersetzen; `temperature`/`top_p`/`top_k` entfernen und Tonalität/Varianz per Prompt steuern; Assistant-Prefill ersetzen; beachten, dass ein Request ohne `thinking`-Feld jetzt denkt (`max_tokens` prüfen, oder explizit `disabled` setzen); `display: "summarized"` setzen, falls Reasoning angezeigt wird; Token-Baselines wegen ~30 % mehr Tokens neu erheben; Progress-Scaffolding streichen; Review-Harness von Severity-Filtern auf „alles melden, später filtern" umstellen; bei bisher thinking-freien Setups Thinking an mit niedrigerem effort testen. Auf Amazon Bedrock erzwungenes `tool_choice` zusammen mit `thinking: {type: "disabled"}` senden. (unbelegt: Bedrock-Detail nicht auf den geprüften Seiten bestätigt)
-- **Lifecycle**: Sonnet 5 ist *Legacy* (noch verfügbar, Status „Active (legacy)"); Anthropic empfiehlt die Migration zu Claude Sonnet 5.5 (`claude-sonnet-5-5`; Checkliste im Sonnet-5.5-Guide). Retirement nicht vor dem 30. Juni 2027 (Anthropic-Plattformen).
+## Migration Notes
+- **MIGRATING FROM claude-sonnet-5**: Scopes explicitly spelled out due to literalness can be more concise again on the target model; re-evaluate tone and variance instructions (potentially restore `temperature` instead of prompt); re-budget tokenizer-dependent `max_tokens` values; `xhigh` is often unavailable outside the current generation.
+- **MIGRATING TO claude-sonnet-5**: Replace `budget_tokens` with adaptive thinking + `effort`; remove `temperature`/`top_p`/`top_k` and control tone/variance via prompt; replace assistant prefill; note that requests without a `thinking` field now think (check `max_tokens`, or explicitly set `disabled`); set `display: "summarized"` if displaying reasoning; re-establish token baselines due to ~30% more tokens; remove progress scaffolding; switch review harnesses from severity filters to "report everything, filter later"; for previously thinking-free setups, test thinking enabled with lower effort. On Amazon Bedrock, send forced `tool_choice` together with `thinking: {type: "disabled"}`. (unbelegt: Bedrock detail not confirmed on verified pages)
+- **Lifecycle**: Sonnet 5 is *Legacy* (still available, status "Active (legacy)"); Anthropic recommends migrating to Claude Sonnet 5.5 (`claude-sonnet-5-5`; checklist in Sonnet 5.5 guide). Retirement not before June 30, 2027 (Anthropic platforms).
 
-## Quellen
-- https://platform.claude.com/docs/en/models/sonnet-5/overview — belegt id `claude-sonnet-5`, 1M Kontext, 128k Output, $2/$10, Knowledge Cutoff Januar 2026, adaptives Thinking, effort-Default `high`, 300k-Output-Beta auf der Batches-API, Sampling-Parameter → 400; Status Legacy („Active (legacy)"), Nachfolger Claude Sonnet 5.5, Retirement nicht vor 30.6.2027.
-- https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-sonnet-5 — adaptives Thinking per Default, `budget_tokens` → 400, Sampling-Parameter → 400, ~30 % mehr Tokens durch neuen Tokenizer, effort-Zuordnung zu Sonnet 4.6, Wörtlichkeit, Verbosity, Tool-Triggering (auch mit Thinking off), Progress-Updates, Tonalität, Design-Defaults, Code-Review-Recall, Computer Use `computer_20251124` bis 2576px.
-- https://platform.claude.com/docs/en/build-with-claude/effort — effort-Stufen inkl. `xhigh`/`max` für Sonnet 5, Default `high`, Empfehlungen je Stufe, effort bricht Prompt-Cache bei Wechsel.
-- https://platform.claude.com/docs/en/build-with-claude/thinking — Sonnet-5-Zeile der Modelltabelle (adaptives Thinking per Default, `budget_tokens` → 400, `disabled` schaltet Thinking ohne effort-Deckel ab), `display`-Default `"omitted"` (Sonnet 4.6: `"summarized"`), Thinking abschalten.
-- https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages — Mid-Conversation-System-Messages auf Sonnet 5 nicht verfügbar; Top-Level-`system` verwenden.
-- https://platform.claude.com/docs/en/models/sonnet-5-5/whats-new-sonnet-5-5 — Abschnitt „Feature support": Per-Message-Effort, Mid-Conversation-System-Messages und -Tool-Changes auf Sonnet 5 nicht verfügbar, Cache-Minimum 1.024 Tokens.
+## Sources
+- https://platform.claude.com/docs/en/models/sonnet-5/overview — covers id `claude-sonnet-5`, 1M context, 128k output, $2/$10, knowledge cutoff January 2026, adaptive thinking, default effort `high`, 300k output beta on Batches API, sampling parameters → 400; status Legacy ("Active (legacy)"), successor Claude Sonnet 5.5, retirement not before June 30, 2027.
+- https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-sonnet-5 — adaptive thinking by default, `budget_tokens` → 400, sampling parameters → 400, ~30% more tokens due to new tokenizer, effort mapping to Sonnet 4.6, literalness, verbosity, tool triggering (including with thinking off), progress updates, tone, design defaults, code review recall, Computer Use `computer_20251124` up to 2576px.
+- https://platform.claude.com/docs/en/build-with-claude/effort — effort levels including `xhigh`/`max` for Sonnet 5, default `high`, recommendations per tier, changing effort breaks prompt cache.
+- https://platform.claude.com/docs/en/build-with-claude/thinking — Sonnet 5 row in model table (adaptive thinking by default, `budget_tokens` → 400, `disabled` turns off thinking without effort cap), `display` default `"omitted"` (Sonnet 4.6: `"summarized"`), turning off thinking.
+- https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages — mid-conversation system messages not available on Sonnet 5; use top-level `system`.
+- https://platform.claude.com/docs/en/models/sonnet-5-5/whats-new-sonnet-5-5 — section "Feature support": per-message effort, mid-conversation system messages, and mid-conversation tool changes not available on Sonnet 5, cache minimum 1,024 tokens.

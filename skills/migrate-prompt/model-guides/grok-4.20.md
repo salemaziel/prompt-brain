@@ -9,48 +9,48 @@ status: current
 
 # Grok 4.20
 
-Dieser Guide deckt den Vendor-Alias `grok-4.20` ab, der laut xAI auf `grok-4.20-0309-reasoning` zeigt. Die Schwester-Slugs `grok-4.20-0309-non-reasoning` und `grok-4.20-multi-agent-0309` sind eigene Modelle mit eigenem Verhalten; sie werden unten beschrieben, aber nicht als Aliase dieses Guides geführt.
+This guide covers the vendor alias `grok-4.20`, which points to `grok-4.20-0309-reasoning` according to xAI. Sister slugs `grok-4.20-0309-non-reasoning` and `grok-4.20-multi-agent-0309` are distinct models with their own behavior; they are described below, but are not tracked as aliases of this guide.
 
 ## Reasoning / Thinking
-- Typ: **Reasoning per Modellwahl, nicht per Parameter.** `grok-4.20-0309-reasoning` trägt „Reasoning: Yes", `grok-4.20-0309-non-reasoning` „Reasoning: No" — wer Denken ein- oder ausschalten will, wechselt den Slug.
-- Effort-Stufen für die Reasoning-Variante: auf der Modellseite nicht gelistet, und die Summary-Tabelle der Reasoning-Seite nennt sie nicht. Ob `reasoning_effort` wirkt, ignoriert wird oder einen Fehler auslöst, ist unbelegt; Default-Tiefe ebenso (unbelegt).
-- **Multi-Agent-Variante** (`grok-4.20-multi-agent`): hier steuert `reasoning.effort` „how many agents collaborate on a request rather than reasoning depth" — `low`/`medium` = 4 Agenten, `high`/`xhigh` = 16 (im xAI SDK `agent_count` 4 oder 16). Dieselbe Effort-Zahl bedeutet also etwas völlig anderes als bei grok-4.5/4.6/4.7.
-- Klassenregel: „`presencePenalty`, `frequencyPenalty`, and `stop` cannot be used with reasoning models. Requests that include them return an error." Reasoning-Tokens werden mitabgerechnet.
-- Lesbare Reasoning-Summaries beschreibt xAI nur für grok-4.7; für grok-4.20 ist kein lesbarer Denkweg dokumentiert (unbelegt).
+- Type: **Reasoning by model choice, not by parameter.** `grok-4.20-0309-reasoning` carries "Reasoning: Yes", `grok-4.20-0309-non-reasoning` "Reasoning: No" — to enable or disable thinking, switch the slug.
+- Effort levels for the reasoning variant: not listed on the model page, and the summary table of the reasoning page does not mention them. Whether `reasoning_effort` takes effect, is ignored, or triggers an error is unbelegt; default depth is likewise (unbelegt).
+- **Multi-Agent variant** (`grok-4.20-multi-agent`): here `reasoning.effort` controls "how many agents collaborate on a request rather than reasoning depth" — `low`/`medium` = 4 agents, `high`/`xhigh` = 16 (in the xAI SDK `agent_count` 4 or 16). The same effort number therefore means something completely different than on grok-4.5/4.6/4.7.
+- Class rule: "`presencePenalty`, `frequencyPenalty`, and `stop` cannot be used with reasoning models. Requests that include them return an error." Reasoning tokens are billed.
+- Readable reasoning summaries are described by xAI only for grok-4.7; for grok-4.20 no readable thinking process is documented (unbelegt).
 
-## Prompting-Stil
-- Herstellerbeschreibung: „a high-performance model with industry-leading speed and agentic tool calling capabilities. It combines the lowest hallucination rate on the market with strict prompt adherence" (Herstelleraussage, nicht unabhängig verifiziert). Daraus folgt: präzise, wörtlich gemeinte Instruktionen; Mehrdeutigkeit wird eher nicht „wohlwollend" aufgelöst (Ableitung, unbelegt).
-- Eine modellspezifische Prompting-Guidance publiziert xAI für grok-4.20 nicht; jede darüber hinausgehende Stilaussage ist unbelegt.
-- Tool-Auswahl über Tool-Beschreibungen steuern („helps the model decide when to use it"); paralleles Tool-Calling ist an, `parallel_tool_calls: false` schaltet es ab. Format über Structured Outputs (`response_format.type: "json_schema"`, „guaranteed to match your schema", Limits 2.048 / 256 / 64).
-- Multi-Agent: xAI empfiehlt, den Scope explizit zu setzen (welche Dimensionen abgedeckt werden sollen), strukturierte Ausgabe wie Vergleichstabellen anzufordern, gewünschte Quellen/Perspektiven zu nennen, tiefe Themen auf Folge-Turns aufzuteilen und Kontext wie Constraints oder Zielmarkt mitzugeben.
-- Caching automatisch ab dem Anfang des `messages`-Arrays; statischen Prefix stabil halten, `x-grok-conv-id` bzw. `prompt_cache_key` setzen.
+## Prompting Style
+- Vendor description: "a high-performance model with industry-leading speed and agentic tool calling capabilities. It combines the lowest hallucination rate on the market with strict prompt adherence" (vendor claim, not independently verified). It follows: precise, literal instructions; ambiguity is unlikely to be resolved "charitably" (inference, unbelegt).
+- xAI does not publish model-specific prompting guidance for grok-4.20; any stylistic assertion beyond this is unbelegt.
+- Control tool selection via tool descriptions ("helps the model decide when to use it"); parallel tool calling is enabled, `parallel_tool_calls: false` disables it. Enforce format via Structured Outputs (`response_format.type: "json_schema"`, "guaranteed to match your schema", limits 2,048 / 256 / 64).
+- Multi-Agent: xAI recommends setting the scope explicitly (which dimensions should be covered), requesting structured output such as comparison tables, specifying desired sources/perspectives, splitting deep topics across follow-up turns, and providing context such as constraints or target market.
+- Caching is automatic from the beginning of the `messages` array; keep static prefix stable, set `x-grok-conv-id` or `prompt_cache_key`.
 
-## Stärken & Schwächen (prompt-relevant)
-- Stärken: **1M Tokens Kontext**; günstig ($1.25 Input / $2.50 Output pro 1M unter 200k, identisch für alle drei Varianten); **Batch API unterstützt** mit 20 % Rabatt; eine Non-Reasoning-Variante für latenzkritische Pfade; Multi-Agent für tiefe Recherche mit serverseitigen Tools (`web_search`, `x_search`, `code_execution`, `collections_search`, Remote MCP).
-- Schwächen/Eigenheiten: keine dokumentierte Effort-Steuerung; kein publizierter Knowledge Cutoff und kein Output-Limit; `logprobs`/`top_logprobs` werden für „`grok-4.20` and newer" still ignoriert; nur us-east-1/us-west-2. Die Modellübersicht empfiehlt für Code und Chat grok-4.7, nicht 4.20.
-- Multi-Agent zusätzlich: **Beta** („The API interface and behavior may change"); „Client-side tools (function calling) and custom tools are not currently supported"; `max_tokens` nicht unterstützt; läuft **nicht** über Chat Completions, nur xAI SDK / Responses API; zurück kommen nur Tool-Calls und die Endantwort des Leader-Agenten; alle Agenten-Tokens und Tool-Calls werden abgerechnet; Rate Limit nur 9 rps / 2,5M tpm.
+## Strengths & Weaknesses (prompt-relevant)
+- Strengths: **1M tokens context**; economical ($1.25 input / $2.50 output per 1M below 200k, identical for all three variants); **Batch API supported** with 20% discount; a non-reasoning variant for latency-critical paths; Multi-Agent for deep research using server-side tools (`web_search`, `x_search`, `code_execution`, `collections_search`, Remote MCP).
+- Weaknesses: No documented effort control; no published knowledge cutoff and no output limit; `logprobs`/`top_logprobs` are silently ignored for "`grok-4.20` and newer"; only us-east-1/us-west-2. The model overview recommends grok-4.7 for code and chat, not 4.20.
+  - Multi-Agent additionally: **Beta** ("The API interface and behavior may change"); "Client-side tools (function calling) and custom tools are not currently supported"; `max_tokens` not supported; runs **not** via Chat Completions, only xAI SDK / Responses API; only tool calls and the final answer of the leader agent are returned; all agent tokens and tool calls are billed; rate limit only 9 rps / 2.5M tpm.
 
-## Output- & Format-Konventionen
-- 1.000.000 Tokens Kontext (alle drei Varianten); Input Text + Bild, Output nur Text. Max. Output und Cutoff: nicht publiziert (unbelegt).
-- Reasoning-Variante: Function Calling ja, Structured Outputs ja, Reasoning ja; Non-Reasoning: Reasoning nein; Batch API bei allen mit 20 % Rabatt.
-- Preise pro 1M Tokens: Input $1.25 (<200k) / $2.50 (≥200k), Cached Input $0.20 / $0.40, Output $2.50 / $5.00; ab 200k Prompt-Tokens gilt der höhere Satz für alle Tokens des Requests. Rate Limits: 37 rps / 10M tpm (Reasoning und Non-Reasoning), 9 rps / 2,5M tpm (Multi-Agent). Regionen us-east-1, us-west-2.
-- Vendor-Aliase der Reasoning-Variante u. a. `grok-4.20`, `grok-4.20-reasoning`, `grok-4.20-reasoning-latest`, `grok-4.20-0309`, `grok-4.20-beta-latest` sowie diverse `…-beta`/`…-experimental-beta`-Strings; Non-Reasoning u. a. `grok-4.20-non-reasoning`; Multi-Agent u. a. `grok-4.20-multi-agent`, `grok-4.20-multi-agent-latest`.
-- Datum: Die Release Notes melden „Grok 4.20 and Grok 4.20 Multi-agent are live" nur unter „March" ohne Jahresangabe — kein belastbares Freigabedatum (unbelegt).
+## Output & Format Conventions
+- 1,000,000 tokens context (all three variants); input text + image, output text only. Max output and cutoff: not published (unbelegt).
+- Reasoning variant: function calling yes, Structured Outputs yes, reasoning yes; Non-Reasoning: reasoning no; Batch API with 20% discount on all.
+- Prices per 1M tokens: input $1.25 (<200k) / $2.50 (≥200k), cached input $0.20 / $0.40, output $2.50 / $5.00; starting at 200k prompt tokens, the higher rate applies to all tokens of the request. Rate limits: 37 rps / 10M tpm (Reasoning and Non-Reasoning), 9 rps / 2.5M tpm (Multi-Agent). Regions us-east-1, us-west-2.
+- Vendor aliases of the reasoning variant include `grok-4.20`, `grok-4.20-reasoning`, `grok-4.20-reasoning-latest`, `grok-4.20-0309`, `grok-4.20-beta-latest` as well as various `…-beta`/`…-experimental-beta` strings; Non-Reasoning includes `grok-4.20-non-reasoning`; Multi-Agent includes `grok-4.20-multi-agent`, `grok-4.20-multi-agent-latest`.
+- Date: Release notes report "Grok 4.20 and Grok 4.20 Multi-agent are live" only under "March" without a year — no reliable release date (unbelegt).
 
-## Migrations-Hinweise
-- **ZU grok-4.20**: (1) Variante bewusst wählen — Reasoning-Slug für Denkaufgaben, `grok-4.20-0309-non-reasoning` als Zero-Thinking-Pfad (statt eines `none`-Efforts). (2) `reasoning_effort` nicht als Tiefenhebel einplanen; Wirkung unbelegt. (3) `presence_penalty`/`frequency_penalty`/`stop` bei Reasoning- und Multi-Agent-Slug entfernen; Formatkontrolle über Structured Outputs. (4) Logik, die auf `logprobs` baut, ersetzen — die Felder werden still ignoriert. (5) Instruktionen wörtlich und vollständig formulieren (strikte Prompt-Adhärenz laut Hersteller). (6) Batch-Jobs sind hier möglich und 20 % günstiger.
-- **Auf Multi-Agent umstellen**: Client-Funktionen und Custom Tools entfallen — nur serverseitige Tools/Remote MCP; Chat-Completions-Integrationen auf Responses API umbauen; `max_tokens` streichen; Längensteuerung in den Prompt bzw. ins Schema verlagern; Kosten wegen paralleler Agenten neu kalkulieren.
-- **VON grok-4.20 weg** (zu grok-4.7/4.6/4.5): Kontext halbiert sich auf 500k — Chunking prüfen; Preise steigen auf $2/$6 pro 1M (<200k); Reasoning ist dort nicht abschaltbar und Effort hat Default `high`, ein Non-Reasoning-Pfad muss auf `low` umgestellt werden. **Effort-Semantik umdeuten**: ein aus Multi-Agent übernommenes `high`/`xhigh` bedeutete 16 Agenten, dort bedeutet es Denktiefe. Zu grok-4.3: gleiches Preisniveau und 1M Kontext, dort aber `reasoning_effort: none` als Zero-Thinking-Pfad statt eines eigenen Slugs.
+## Migration Notes
+- **MIGRATING TO grok-4.20**: (1) Choose variant deliberately — reasoning slug for thinking tasks, `grok-4.20-0309-non-reasoning` as a zero-thinking path (instead of a `none` effort). (2) Do not plan on `reasoning_effort` as a depth lever; effect is unbelegt. (3) Remove `presence_penalty`/`frequency_penalty`/`stop` on reasoning and multi-agent slugs; enforce format control via Structured Outputs. (4) Replace logic relying on `logprobs` — the fields are silently ignored. (5) Formulate instructions literally and completely (strict prompt adherence according to vendor). (6) Batch jobs are possible here and 20% cheaper.
+- **Switching to Multi-Agent**: Client functions and custom tools are unavailable — only server-side tools/Remote MCP; migrate Chat Completions integrations to Responses API; omit `max_tokens`; move length control into the prompt or schema; recalculate costs due to parallel agents.
+- **MIGRATING FROM grok-4.20** (to grok-4.7/4.6/4.5): Context halves to 500k — check chunking; prices rise to $2/$6 per 1M (<200k); reasoning cannot be disabled there and effort defaults to `high`, so a non-reasoning path must be shifted to `low`. **Reinterpret effort semantics**: a `high`/`xhigh` carried over from Multi-Agent meant 16 agents; there it denotes reasoning depth. To grok-4.3: same price tier and 1M context, but with `reasoning_effort: none` as a zero-thinking path instead of a distinct slug.
 
-## Quellen
-- https://docs.x.ai/developers/models/grok-4.20-0309-reasoning — Modellseite: id `grok-4.20-0309-reasoning`, Aliasliste inkl. `grok-4.20`, Beschreibung („industry-leading speed and agentic tool calling", „lowest hallucination rate on the market with strict prompt adherence"), 1M Kontext, Text+Bild→Text, Function Calling/Structured Outputs/Reasoning ja ohne Effort-Optionen, Batch mit 20 % Rabatt, Preistabelle, 37 rps / 10M tpm, us-east-1/us-west-2.
-- https://docs.x.ai/developers/models/grok-4.20-0309-non-reasoning — „Reasoning: No", eigene Aliasliste, gleiche Preise, Limits und Regionen.
-- https://docs.x.ai/developers/models/grok-4.20-multi-agent-0309 — Multi-Agent-Modellseite: Aliase, 1M Kontext, Batch mit 20 % Rabatt, 9 rps / 2,5M tpm.
-- https://docs.x.ai/developers/model-capabilities/text/multi-agent — Beta-Hinweis, `agent_count` 4/16 bzw. Effort-Mapping, unterstützte Server-Tools, keine Client-Funktionen/Custom Tools, kein `max_tokens`, nicht über Chat Completions, nur Leader-Antwort, Abrechnung aller Agenten, Prompting-Empfehlungen.
-- https://docs.x.ai/developers/model-capabilities/text/reasoning — Summary-Tabelle (grok-4.20-multi-agent: „Controls agent count (4 or 16)"), Klassenregel `presencePenalty`/`frequencyPenalty`/`stop`, Default `high` und nicht abschaltbares Reasoning bei grok-4.5/4.6/4.7, Summaries nur grok-4.7.
-- https://docs.x.ai/developers/models — Preisroster, `logprobs`-Hinweis für „`grok-4.20` and newer", Empfehlung grok-4.7 für Code und Chat, Vergleichswerte grok-4.3/4.5/4.6/4.7.
-- https://docs.x.ai/developers/release-notes — „Grok 4.20 and Grok 4.20 Multi-agent are live" unter „March" ohne Jahresangabe.
-- https://docs.x.ai/developers/migration/may-15-retirement — belegt `none`-Reasoning-Effort bei grok-4.3 als Zero-Thinking-Ziel.
-- https://docs.x.ai/developers/tools/function-calling — Tool-Beschreibungen, `parallel_tool_calls: false`.
-- https://docs.x.ai/developers/model-capabilities/text/structured-outputs — Schema-Garantie und Limits.
-- https://docs.x.ai/developers/advanced-api-usage/prompt-caching — automatisches Caching, `x-grok-conv-id`, `prompt_cache_key`.
+## Sources
+- https://docs.x.ai/developers/models/grok-4.20-0309-reasoning — Model page: id `grok-4.20-0309-reasoning`, alias list including `grok-4.20`, description ("industry-leading speed and agentic tool calling", "lowest hallucination rate on the market with strict prompt adherence"), 1M context, text+image→text, function calling/Structured Outputs/reasoning yes without effort options, batch with 20% discount, pricing table, 37 rps / 10M tpm, us-east-1/us-west-2.
+- https://docs.x.ai/developers/models/grok-4.20-0309-non-reasoning — "Reasoning: No", separate alias list, same prices, limits, and regions.
+- https://docs.x.ai/developers/models/grok-4.20-multi-agent-0309 — Multi-Agent model page: aliases, 1M context, batch with 20% discount, 9 rps / 2.5M tpm.
+- https://docs.x.ai/developers/model-capabilities/text/multi-agent — Beta note, `agent_count` 4/16 or effort mapping, supported server tools, no client functions/custom tools, no `max_tokens`, not via Chat Completions, only leader response, billing of all agents, prompting recommendations.
+- https://docs.x.ai/developers/model-capabilities/text/reasoning — Summary table (grok-4.20-multi-agent: "Controls agent count (4 or 16)"), class rule `presencePenalty`/`frequencyPenalty`/`stop`, default `high` and non-disableable reasoning on grok-4.5/4.6/4.7, summaries only for grok-4.7.
+- https://docs.x.ai/developers/models — Pricing roster, `logprobs` note for "`grok-4.20` and newer", recommendation of grok-4.7 for code and chat, comparative values grok-4.3/4.5/4.6/4.7.
+- https://docs.x.ai/developers/release-notes — "Grok 4.20 and Grok 4.20 Multi-agent are live" under "March" without year.
+- https://docs.x.ai/developers/migration/may-15-retirement — Verifies `none` reasoning effort on grok-4.3 as zero-thinking target.
+- https://docs.x.ai/developers/tools/function-calling — Tool descriptions, `parallel_tool_calls: false`.
+- https://docs.x.ai/developers/model-capabilities/text/structured-outputs — Schema guarantee and limits.
+- https://docs.x.ai/developers/advanced-api-usage/prompt-caching — Automatic caching, `x-grok-conv-id`, `prompt_cache_key`.

@@ -10,56 +10,56 @@ status: current
 # Llama 4 Scout
 
 ## Reasoning / Thinking
-- **Typ: keins (kein dediziertes Reasoning-/Thinking-Modell).** Die offiziellen Modellkarten und Prompt-Formate führen keinen extended-/adaptive-Thinking-Modus und keine Thinking-Tokens auf; Llama 4 Scout ist ein natively multimodales, instruction-tuned Standardmodell ohne separaten Denkmodus.
-- **Architektur: Mixture-of-Experts (MoE).** 17 Mrd. aktive Parameter, 109 Mrd. Gesamtparameter, 16 Experten. Pro Token sind immer nur 17B Parameter aktiv. Verwendet eine `iRoPE`-Architektur sowie eine skalierte Softmax (Inference-Time Temperature Scaling) zur Längen-Generalisierung.
-- **Sehr langer Kontext:** Laut Modellkarte und Prompt-Format-Seite bis zu 10 Mio. Tokens Kontext; laut Meta-Blog ist Scout „both pre-trained and post-trained with a 256K context length". Diese Reichweite eignet sich für Multi-Dokument-Analyse, sehr große Codebasen und lange Verläufe.
-- **Schritt-für-Schritt-Denken anstoßen:** Da kein nativer Thinking-Modus existiert, wird Chain-of-Thought über klassisches Prompting erreicht — also explizit im System- oder User-Prompt anweisen (z. B. „Denke das Problem Schritt für Schritt durch, bevor du antwortest"). Laut Modellkarte (Instruct-Tabelle) erreicht Scout u. a. 74,3 MMLU Pro und 57,2 GPQA Diamond.
+- **Type: none (no dedicated reasoning/thinking model).** Official model cards and prompt formats list no extended/adaptive thinking mode and no thinking tokens; Llama 4 Scout is a natively multimodal, instruction-tuned standard model without a separate thinking mode.
+- **Architecture: Mixture-of-Experts (MoE).** 17 billion active parameters, 109 billion total parameters, 16 experts. Only 17B parameters are active per token. Utilizes an `iRoPE` architecture and scaled softmax (inference-time temperature scaling) for length generalization.
+- **Very long context:** Up to 10 million tokens context according to model card and prompt format page; according to Meta blog, Scout is "both pre-trained and post-trained with a 256K context length". This reach is well suited for multi-document analysis, very large codebases, and long conversation histories.
+- **Triggering step-by-step thinking:** Since no native thinking mode exists, chain-of-thought is achieved via traditional prompting — explicitly instructing in the system or user prompt (e.g. "Think through the problem step by step before answering"). According to the model card (Instruct table), Scout achieves 74.3 MMLU Pro and 57.2 GPQA Diamond, among others.
 
-## Prompting-Stil
-- **Präskriptivität: mittel bis hoch über das System-Prompt.** Meta empfiehlt ausdrücklich ein gut gestaltetes System-Prompt, um falsche Verweigerungen („false refusals") und belehrenden („preachy") Ton zu reduzieren.
-- **Offizielles Prompt-Format / Chat-Template** mit Spezial-Tokens:
-  - `<|begin_of_text|>` — Markiert den Prompt-Anfang.
-  - `<|header_start|>{role}<|header_end|>` — Umschließt die Rolle (`system`, `user`, `assistant`, `ipython` für Tool-Antworten).
-  - `<|eot|>` — End-of-Turn, signalisiert das Ende einer Nachricht/Antwort.
-  - `<|end_of_text|>` — beendet die Generierung („Model will cease to generate more tokens"); wird laut Doku nur von den Basismodellen (pretrained) erzeugt — Instruct-Turns enden mit `<|eot|>`.
-  - Beispielstruktur: `<|begin_of_text|><|header_start|>system<|header_end|>{system_prompt}<|eot|><|header_start|>user<|header_end|>{prompt}<|eot|><|header_start|>assistant<|header_end|>`
-- **Offizielles System-Prompt-Template (Auszug):** „You are an expert conversationalist who responds to the best of your ability…" Das Template rät, Phrasen mit moralischer Überlegenheit zu vermeiden (z. B. „it's important to", „it's crucial to"), nicht zu belehren und Prompts zu politischen/gesellschaftlichen Themen nicht zu verweigern.
-- **Instruktionsbefolgung:** Instruction-tuned über lightweight SFT → online RL → lightweight DPO. Gute Steuerbarkeit von Ton und Format über das System-Prompt.
-- **Bekannte Eigenheiten:** Ohne gutes System-Prompt neigt das Modell zu standardisierter/belehrender Sprache. Bildverständnis ist nur für Englisch validiert, obwohl das Modell mehrsprachig ist.
-- **Unterschiede zu Maverick:** Beide teilen 17B aktive Parameter und dasselbe Prompt-Format. Scout = 16 Experten / 109B gesamt / bis 10M Kontext / läuft auf einer einzelnen GPU (INT4-quantisiert auf 1× H100); Maverick = 128 Experten / 400B gesamt / 1M Kontext / höhere Reasoning-Performance, benötigt mehrere GPUs. Die Llama-4-Prompt-Format-Seite dokumentiert ein gemeinsames Format für die Llama-4-Modelle, ohne Scout und Maverick zu unterscheiden; Maverick liefert tendenziell stärkere Reasoning-Ergebnisse, Scout punktet mit längerem Kontext und Ressourceneffizienz.
+## Prompting Style
+- **Prescriptiveness: Medium to high via the system prompt.** Meta explicitly recommends a well-crafted system prompt to reduce false refusals and a preachy tone.
+- **Official prompt format / chat template** with special tokens:
+  - `<|begin_of_text|>` — Marks start of prompt.
+  - `<|header_start|>{role}<|header_end|>` — Encloses the role (`system`, `user`, `assistant`, `ipython` for tool responses).
+  - `<|eot|>` — End-of-turn, signals end of a message/response.
+  - `<|end_of_text|>` — Concludes generation ("Model will cease to generate more tokens"); according to documentation, produced only by base models (pretrained) — instruct turns end with `<|eot|>`.
+  - Example structure: `<|begin_of_text|><|header_start|>system<|header_end|>{system_prompt}<|eot|><|header_start|>user<|header_end|>{prompt}<|eot|><|header_start|>assistant<|header_end|>`
+- **Official system prompt template (excerpt):** "You are an expert conversationalist who responds to the best of your ability…" The template advises avoiding phrases asserting moral superiority (e.g. "it's important to", "it's crucial to"), avoiding preachiness, and not refusing prompts on political/societal topics.
+- **Instruction following:** Instruction-tuned via lightweight SFT → online RL → lightweight DPO. Good steerability of tone and format via the system prompt.
+- **Known quirks:** Without a good system prompt, the model tends toward standardized/preachy language. Image understanding is validated only for English, although the model is multilingual.
+- **Differences from Maverick:** Both share 17B active parameters and the same prompt format. Scout = 16 experts / 109B total / up to 10M context / runs on a single GPU (INT4 quantized on 1× H100); Maverick = 128 experts / 400B total / 1M context / higher reasoning performance, requires multiple GPUs. The Llama 4 prompt format page documents a unified format for Llama 4 models without distinguishing Scout and Maverick; Maverick tends to deliver stronger reasoning performance, while Scout excels with longer context and resource efficiency.
 
-## Stärken & Schwächen (prompt-relevant)
-- **Stärken:**
-  - Extrem langer Kontext (bis 10M Tokens, Instruct) — Prompts können sehr große Eingaben enthalten.
-  - Native Multimodalität (early fusion): Text + bis zu 5 Bilder im Input getestet. „Best-in-class" bei Image Grounding / visueller Lokalisierung.
-  - Stark mehrsprachig (Pre-Training auf 200 Sprachen, davon >100 mit je >1 Mrd. Tokens).
-  - Effizient: läuft auf einer einzelnen Server-GPU.
-- **Schwächen / Einschränkungen:**
-  - Output ist **nur Text** (keine Bild-/Audio-Ausgabe).
-  - Bildverständnis offiziell nur für **Englisch** validiert.
-  - Kein nativer Reasoning-Modus — komplexe mehrstufige Aufgaben erfordern explizites CoT-Prompting; auf reinen Reasoning-Benchmarks unter Maverick.
-  - Wissensstand bis **August 2024** (Knowledge Cutoff).
-  - Ohne System-Prompt-Tuning Risiko von belehrendem Ton / unnötigen Verweigerungen.
+## Strengths & Weaknesses (prompt-relevant)
+- Strengths:
+  - Extremely long context (up to 10M tokens, Instruct) — prompts can accommodate massive inputs.
+  - Native multimodality (early fusion): Text + up to 5 images tested in input. "Best-in-class" at image grounding / visual localization.
+  - Strongly multilingual (pre-training on 200 languages, >100 of which with >1 billion tokens each).
+  - Efficient: runs on a single server GPU.
+- Weaknesses:
+  - Output is **text-only** (no image/audio output).
+  - Vision understanding officially validated for **English** only.
+  - No native reasoning mode — complex multi-step tasks require explicit CoT prompting; trails Maverick on pure reasoning benchmarks.
+  - Knowledge cutoff up to **August 2024**.
+  - Without system prompt tuning, risk of preachy tone / unnecessary refusals.
 
-## Output- & Format-Konventionen
-- **Output-Modalität:** ausschließlich Text. Antworten enden mit `<|eot|>`.
-- **Function/Tool-Calling:** zwei offizielle Formate: Python-/Listen-Format (`[get_weather(city="San Francisco")]`) und JSON-Format. Tool-Ergebnisse werden über die Rolle `ipython` zurückgegeben.
-- **Bild-Input-Konventionen:** Bilder werden in 336×336-Pixel-Kacheln zerlegt; große Bilder nutzen Kachel-Separator-Tokens (`<|tile_x_separator|>`, `<|tile_y_separator|>`), kleine Bilder unter 336×336 benötigen keine Separatoren.
-- **Strukturierte Ausgaben** (JSON, Markdown, Tabellen) werden über das System-/User-Prompt gesteuert (kein dokumentierter Schema-Modus; Zuverlässigkeit unbelegt); spezifische empfohlene Sampling-Parameter (z. B. Temperature) gibt Meta in der Modellkarte nicht vor (unbelegt für konkrete Temperature-Werte). Code-Beispiele nutzen `bfloat16` und `attn_implementation="flex_attention"`.
+## Output & Format Conventions
+- **Output modality:** Exclusively text. Responses end with `<|eot|>`.
+- **Function/Tool Calling:** Two official formats: Python/list format (`[get_weather(city="San Francisco")]`) and JSON format. Tool results are returned via the role `ipython`.
+- **Image input conventions:** Images are split into 336×336 pixel tiles; large images use tile separator tokens (`<|tile_x_separator|>`, `<|tile_y_separator|>`), while small images under 336×336 require no separators.
+- **Structured outputs** (JSON, Markdown, tables) are controlled via system/user prompt (no documented schema mode; reliability unbelegt); specific recommended sampling parameters (e.g. temperature) are not prescribed by Meta in the model card (unbelegt for concrete temperature values). Code examples use `bfloat16` and `attn_implementation="flex_attention"`.
 
-## Migrations-Hinweise
-- **Typische Änderungen, wenn man VON Llama 4 Scout wegmigriert:**
-  - Zu Maverick: gleiches Prompt-Format und gleiche aktive Parameterzahl — kein Template-Umbau nötig; jedoch Kontextlimit von 10M auf 1M beachten und Hardware-Bedarf einplanen. Reasoning-lastige Prompts profitieren.
-  - Zu einem dedizierten Reasoning-Modell: explizite CoT-Instruktionen aus dem Prompt entfernen oder anpassen; Prompt-Format/Spezial-Tokens unterscheiden sich vollständig.
-  - Für >1M-Token-Workflows das Kontextfenster des Ziels prüfen; sonst Chunking/Retrieval.
-- **Typische Änderungen, wenn man ZU Llama 4 Scout migriert:**
-  - Von Llama 3: Umstellung des Prompt-Formats auf die Llama-4-Tokens (`<|header_start|>`/`<|header_end|>`/`<|eot|>`); Kontext steigt auf bis zu 10M (Llama-3-Kontextlänge hier unbelegt).
-  - System-Prompt nach Metas Template gestalten, um belehrenden Ton / False Refusals zu vermeiden.
-  - Multimodale Inputs (bis 5 Bilder) sind möglich; Bild-Prompts möglichst auf Englisch formulieren.
-  - Für mehrstufiges Reasoning explizite Schritt-für-Schritt-Anweisungen ergänzen (kein Auto-Thinking).
-  - Knowledge Cutoff August 2024 berücksichtigen; aktuelle Fakten via Tool-/RAG-Kontext zuführen.
+## Migration Notes
+- **MIGRATING FROM llama-4-scout**:
+  - To Maverick: Same prompt format and same active parameter count — no template modification needed; however, note the context limit drop from 10M to 1M and plan for increased hardware requirements. Reasoning-heavy prompts benefit.
+  - To a dedicated reasoning model: Remove or adjust explicit CoT instructions in the prompt; prompt format/special tokens differ completely.
+  - For >1M-token workflows, verify the target model's context window; otherwise implement chunking/retrieval.
+- **MIGRATING TO llama-4-scout**:
+  - From Llama 3: Convert prompt format to Llama 4 tokens (`<|header_start|>`/`<|header_end|>`/`<|eot|>`); context increases up to 10M (Llama 3 context length here unbelegt).
+  - Shape system prompt according to Meta's template to prevent preachy tone / false refusals.
+  - Multimodal inputs (up to 5 images) are supported; formulate image prompts in English whenever possible.
+  - For multi-step reasoning, add explicit step-by-step instructions (no automatic thinking).
+  - Account for August 2024 knowledge cutoff; feed current facts via tool/RAG context.
 
-## Quellen
-- https://dev.meta.ai/llama/docs/model-cards-and-prompt-formats/llama4 — offizielles Prompt-Format, Spezial-Tokens, Rollen inkl. `ipython`, System-Prompt-Template, Function-Calling-Formate, Bild-Kachelung/Separator-Tokens, Knowledge Cutoff August 2024, kein Reasoning-Modus.
-- https://ai.meta.com/blog/llama-4-multimodal-intelligence/ — MoE-Architektur (17B aktiv, 16 Experten, 109B gesamt für Scout), 10M-Token-Kontext, Pre- und Post-Training mit 256K Kontextlänge, iRoPE, early-fusion-Multimodalität, Mehrsprachigkeit, Bildanzahl, Image Grounding, Trainingsmethodik, Einzel-GPU-Fähigkeit.
-- https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E-Instruct — offizielle Modellkarte: kein Reasoning-Modus, System-Prompt-Empfehlung, 10M-Kontext, MoE-Werte, unterstützte Sprachen, bis 5 Bilder, Knowledge Cutoff August 2024, Benchmark-Werte (Instruct: 74,3 MMLU Pro / 57,2 GPQA Diamond), Code-Hinweise (`flex_attention`, `bfloat16`).
+## Sources
+- https://dev.meta.ai/llama/docs/model-cards-and-prompt-formats/llama4 — Official prompt format, special tokens, roles including `ipython`, system prompt template, function calling formats, image tiling/separator tokens, knowledge cutoff August 2024, no reasoning mode.
+- https://ai.meta.com/blog/llama-4-multimodal-intelligence/ — MoE architecture (17B active, 16 experts, 109B total for Scout), 10M-token context, pre- and post-training with 256K context length, iRoPE, early-fusion multimodality, multilingual support, image count, image grounding, training methodology, single-GPU capability.
+- https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E-Instruct — Official model card: no reasoning mode, system prompt recommendation, 10M context, MoE figures, supported languages, up to 5 images, knowledge cutoff August 2024, benchmark scores (Instruct: 74.3 MMLU Pro / 57.2 GPQA Diamond), code notes (`flex_attention`, `bfloat16`).

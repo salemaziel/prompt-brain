@@ -125,7 +125,7 @@ Supported models (75 guides), current and legacy (superseded but still documente
 
 Each lives as a guide in
 [`skills/migrate-prompt/model-guides/`](skills/migrate-prompt/model-guides/); pass an unknown
-model and the command lists what is available instead of guessing. Guide bodies are in German
+model and the command lists what is available instead of guessing. Guide bodies are in English
 and cite official vendor docs.
 
 Bare family aliases (`opus`, `sonnet`, `mistral-large`) resolve to the newest guide of that

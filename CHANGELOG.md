@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-10-21
+
+English migration of all 75 model guides, Antigravity CLI plugin packaging, and manifest hygiene.
+
+### Changed
+
+- **Translated all 75 model guides from German to English** in `skills/migrate-prompt/model-guides/` with standardized 6-section schema headings (`Reasoning / Thinking`, `Prompting Style`, `Strengths & Weaknesses (prompt-relevant)`, `Output & Format Conventions`, `Migration Notes`, `Sources`) while strictly preserving vendor citations, technical parameter names, and `(unbelegt)` markers.
+- **Updated `check-registry-sync.mjs`, `CLAUDE.md`, and `README.md`** to enforce and document the English schema headings.
+
+### Added
+
+- **Antigravity CLI native plugin support** via `gemini-extension.json`, `plugin.json`, and slash commands in `commands/` (`commands/optimize-prompt.toml`, `commands/migrate-prompt.toml`).
+- **Plugin icon** at `.claude-plugin/icon.png`.
+- **Workspace context documentation** at `CONTEXT.md`.
+
 ## [0.8.0] - 2026-10-13
 
 The Claude 5.5 generation and 46 new model guides (29 → 75), both skills pinned to Opus 5.5, an input contract that holds against tag-like text and non-substituting hosts, and release tooling that checks what this repo documents. Also ships the 2026-09-06 model-scan work that was never released under its own version.
@@ -214,6 +229,7 @@ Initial release of prompt-brain.
 - **Maximum effort mode** (`effort: max`) for full model capability
 - **User-invocable only** (`disable-model-invocation: true`) — the skill is never triggered automatically
 
+[0.8.1]: https://github.com/tarekst/prompt-brain/compare/prompt-brain--v0.8.0...prompt-brain--v0.8.1
 [0.8.0]: https://github.com/tarekst/prompt-brain/compare/prompt-brain--v0.7.0...prompt-brain--v0.8.0
 [0.7.0]: https://github.com/tarekst/prompt-brain/compare/prompt-brain--v0.6.0...prompt-brain--v0.7.0
 [0.6.0]: https://github.com/tarekst/prompt-brain/compare/8406af2e0d0cd4b8430f4ac9ccafebe9cdd7bddd...prompt-brain--v0.6.0
