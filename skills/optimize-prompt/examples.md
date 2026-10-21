@@ -9,6 +9,8 @@ A condensed weakness quick-reference follows at the end. The two Output Format h
 - Example 1 — Vague bug-fix prompt (code-change branch)
 - Example 2 — Multi-step research with parallel agents
 - Example 3 — Already well-structured prompt (honesty edge case)
+- Example 4 — Direct single-task prompt (--mode direct)
+- Example 5 — Structured tool calling & schema contract (--mode structured)
 - Weakness quick-reference
 
 ---
@@ -174,9 +176,96 @@ bullet. No structural changes were warranted.
 
 ---
 
+## Example 4 — Direct single-task prompt (--mode direct)
+
+**Invocation**
+
+`/prompt-brain:optimize-prompt --mode direct Summarize the incident post-mortem in docs/incidents/2026-10-14.md for executives`
+
+**Optimized prompt** (output as a fenced code block):
+
+```
+## Task
+Summarize the incident post-mortem in `docs/incidents/2026-10-14.md` for an executive audience.
+
+## Context
+Target readers are VP-level engineering leadership. Focus on business impact, customer downtime, and remediation commitments rather than low-level stack traces.
+
+## Output Format
+Deliver a concise Markdown summary with exactly these 4 sections:
+1. **Executive Summary** (max 2 sentences: what happened and total customer impact).
+2. **Downtime & Blast Radius** (metrics: duration, impacted services, affected users/tenants).
+3. **Root Cause** (non-technical summary of failure trigger and why safeguards failed).
+4. **Preventative Action Items** (table: action, owner team, target delivery date).
+
+## Constraints
+- Length: strictly under 350 words total.
+- Do not invent hypothetical metrics; if specific figures are absent from the document, write "[Metric pending post-mortem finalization]".
+```
+
+**Changelog** (rendered):
+
+### What was improved
+
+#### Structure & Format
+- **Selected direct single-block layout (--mode direct)** — preserved a concise single-turn structure instead of forcing unnecessary multi-phase execution blocks for a straightforward document summarization task.
+- **Defined explicit 4-part executive schema** — replaced the open-ended "summarize" request with concrete, checkable sections tailored to leadership needs.
+
+#### Guardrails
+- **Added word limit and metric-preservation constraint** — prevents verbose filler and stops the model from hallucinating incident numbers when source data is incomplete.
+
+---
+
+## Example 5 — Structured tool calling & schema contract (--mode structured)
+
+**Invocation**
+
+`/prompt-brain:optimize-prompt --mode structured Call searchInventory and sendRestockAlert when items are low`
+
+**Optimized prompt** (output as a fenced code block):
+
+```
+## Objective
+Evaluate inventory levels via `searchInventory` and trigger restock notifications via `sendRestockAlert` for items below threshold.
+
+## Tool Invocation Protocol
+1. **Inventory Query**:
+   - Call `searchInventory` with `{ status: "active", warehouse_id: "all" }`.
+   - On network error or timeout: retry once; if failure persists, stop and log `INVENTORY_SERVICE_UNAVAILABLE` without sending alerts.
+
+2. **Threshold Evaluation**:
+   - Filter items where `current_stock <= safety_stock_threshold`.
+
+3. **Alert Dispatch**:
+   - For each qualifying item, call `sendRestockAlert` with:
+     ```json
+     {
+       "sku": "<string, exact match from inventory>",
+       "urgency": "critical | standard",
+       "suggested_order_qty": "<integer, max(reorder_point - current_stock, minimum_batch)>"
+     }
+     ```
+   - Deduplication: Do not dispatch if `alert_history` indicates an alert was sent in the last 24 hours.
+
+## Validation & Done Criteria
+- Complete when all active catalog SKUs have been evaluated and alerts dispatched.
+- Final response must output a JSON execution summary: `{ "evaluated_count": N, "alerts_dispatched": M, "errors": [] }`.
+```
+
+**Changelog** (rendered):
+
+### What was improved
+
+#### Tool & Schema Deficiencies (Category H)
+- **Specified exact parameter schema and types** — eliminated ambiguity on what values to pass to `searchInventory` and `sendRestockAlert`.
+- **Added error recovery and rate-limiting deduplication** — ensures service outages do not trigger runaway alerts and prevents duplicate alerts within a 24-hour window.
+- **Added structured JSON completion contract** — provides an auditable summary rather than conversational text.
+
+---
+
 ## Weakness quick-reference
 
-Short prompts and the primary category each one exercises (A–G map to the Step 2
+Short prompts and the primary category each one exercises (A–H map to the Step 2
 weakness catalog in `SKILL.md`):
 
 | Prompt | Primary weakness(es) |
@@ -189,3 +278,4 @@ weakness catalog in `SKILL.md`):
 | `Migrate our frontend from React class components to hooks` | A (current-state analysis), E (verification) |
 | `Please carefully and thoroughly analyze the entire codebase and create a comprehensive overview` | F (filler adjectives, no structure), D (no scope) |
 | `Create documentation for all our API endpoints, database models, and deployment process` | B (no paths/templates) |
+| `Call the payment API and refund user if unhappy` | H (tool schema, missing validation, irreversible action) |

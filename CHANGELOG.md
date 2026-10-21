@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-10-21
+
+Target-aware prompt optimization, execution mode archetypes, tool/schema validation, and automated guide auditing.
+
+### Added
+
+- **Mode Archetypes for `optimize-prompt`**: `--mode direct` (single-task clarity without multi-phase scaffolding), `--mode system` (system prompts with role, invariant rules, and contracts), `--mode structured` (JSON/schema extraction), and `--mode agentic` (default multi-phase workflows).
+- **Target-Aware Prompt Optimization**: `--target <model>` allows optimizing directly for a specific target model by dynamically loading its model guide from `skills/migrate-prompt/model-guides/`.
+- **Tool & Schema Quality Analysis (Category H)**: Weakness analysis now audits tool-calling prompts for parameter typing, enums, required keys, error recovery, and failure fallbacks.
+- **Few-Shot Exemplar Generation**: `--with-examples` synthesizes 2-3 realistic input/output pairs in `<examples><example>...` tags.
+- **Model Guide Freshness & Schema Audit Tool**: `scripts/audit-model-guides.mjs` verifies schema compliance, canonical headings, and flags guides exceeding 150-day warning / 180-day staleness thresholds.
+- **New Eval Cases**: Added `11-direct-single-task-mode` and `12-tool-schema-optimization` to test suite.
+
+### Changed
+
+- **`optimize-prompt/SKILL.md`**: Tightened and streamlined instruction text to stay within the 2000-word budget (259 lines / ~1732 words) while adding the new capabilities.
+- **`optimize-prompt/examples.md`**: Added worked examples for `--mode direct` and `--mode structured` tool optimization.
+
 ## [0.8.1] - 2026-10-21
 
 English migration of all 75 model guides, Antigravity CLI plugin packaging, and manifest hygiene.
@@ -229,6 +247,7 @@ Initial release of prompt-brain.
 - **Maximum effort mode** (`effort: max`) for full model capability
 - **User-invocable only** (`disable-model-invocation: true`) — the skill is never triggered automatically
 
+[0.9.0]: https://github.com/tarekst/prompt-brain/compare/prompt-brain--v0.8.1...prompt-brain--v0.9.0
 [0.8.1]: https://github.com/tarekst/prompt-brain/compare/prompt-brain--v0.8.0...prompt-brain--v0.8.1
 [0.8.0]: https://github.com/tarekst/prompt-brain/compare/prompt-brain--v0.7.0...prompt-brain--v0.8.0
 [0.7.0]: https://github.com/tarekst/prompt-brain/compare/prompt-brain--v0.6.0...prompt-brain--v0.7.0

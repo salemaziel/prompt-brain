@@ -1,0 +1,54 @@
+schema_version: "1.1"
+name: 11-direct-single-task-mode
+description: Direct mode must preserve single-task layout without injecting multi-phase execution blocks.
+tags: [optimize, direct-mode, structure, non-agentic]
+execution:
+  prompt: |-
+    /prompt-brain:optimize-prompt --mode direct Summarize the incident post-mortem in docs/incidents/2026-10-14.md for executives
+  max_turns: 10
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill]
+runs: 3
+graders:
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Optimization Algorithm'
+    match: contains
+    arm: with-only
+  - name: optimized-prompt-in-code-fence
+    type: regex
+    target: last_message
+    pattern: '```.*```'
+    flags: 's'
+    match: contains
+  - name: changelog-rendered-outside-fence
+    type: regex
+    target: last_message
+    pattern: '```(?!.*```).*?\n#{2,4} \S'
+    flags: 's'
+    match: contains
+  - name: direct-task-header-present
+    type: regex
+    target: last_message
+    pattern: '^#+ *\d*\.? *(Task|Objective)'
+    flags: 'im'
+    match: contains
+  - name: no-unnecessary-phases
+    type: llm
+    focus: last_message
+    criteria: |-
+      Does the optimized prompt avoid breaking the single-turn summarization task into artificial
+      sequential execution phases (e.g. "Phase 1: Read", "Phase 2: Extract", "Phase 3: Write")?
+      Answer yes if it uses a direct single-block layout (Task/Context/Output Format/Constraints).
+  - name: schema-and-word-limit-added
+    type: llm
+    focus: last_message
+    criteria: |-
+      Does the optimized prompt specify concrete output sections and a length constraint appropriate
+      for executive review without inventing unrelated requirements?
+expected_outcome: |-
+  - Outputs the reconstructed prompt inside a fenced code block.
+  - Outputs the changelog as rendered markdown.
+  - Avoids artificial multi-phase overhead in direct mode.
+  - Adds concrete output structure and constraints.

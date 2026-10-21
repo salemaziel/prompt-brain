@@ -1,0 +1,47 @@
+schema_version: "1.1"
+name: 12-tool-schema-optimization
+description: Tool calling prompt must gain explicit parameter contracts, error recovery, and structured done criteria.
+tags: [optimize, tool-schema, function-calling, guardrails]
+execution:
+  prompt: |-
+    /prompt-brain:optimize-prompt --mode structured Call searchInventory and sendRestockAlert when items are low
+  max_turns: 10
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill]
+runs: 3
+graders:
+  - name: skill-loaded
+    type: regex
+    target: trace
+    pattern: 'Prompt Optimization Algorithm'
+    match: contains
+    arm: with-only
+  - name: optimized-prompt-in-code-fence
+    type: regex
+    target: last_message
+    pattern: '```.*```'
+    flags: 's'
+    match: contains
+  - name: changelog-rendered-outside-fence
+    type: regex
+    target: last_message
+    pattern: '```(?!.*```).*?\n#{2,4} \S'
+    flags: 's'
+    match: contains
+  - name: tool-contract-defined
+    type: llm
+    focus: last_message
+    criteria: |-
+      Does the optimized prompt specify explicit parameter schemas/fields and error or retry
+      guidance for the tools (searchInventory and sendRestockAlert)?
+  - name: changelog-flags-category-h
+    type: regex
+    target: last_message
+    pattern: '(Tool|Schema|Category H)'
+    flags: 'i'
+    match: contains
+expected_outcome: |-
+  - Outputs the reconstructed prompt inside a fenced code block.
+  - Outputs the changelog as rendered markdown.
+  - Adds explicit parameter schema and error recovery for tool calls.
+  - Notes tool/schema improvements in the changelog.

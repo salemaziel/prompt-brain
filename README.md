@@ -61,15 +61,22 @@ the **Marketplaces** tab of `/plugin` and choose **Enable auto-update**. See
 ## Usage
 
 ```
-/prompt-brain:optimize-prompt [your prompt to optimize]
+/prompt-brain:optimize-prompt [--mode direct|system|structured|agentic] [--target model] [--with-examples] [prompt to optimize]
 ```
 
-Paste your prompt after the command. The plugin will:
-1. Parse the prompt's intent and structure
-2. Analyze it against 7 weakness categories
-3. Match best practices for the prompt type
-4. Reconstruct it from scratch
+Paste your prompt after the command (with optional flags). The plugin will:
+1. Parse the prompt's intent, mode, and target model
+2. Analyze it against 8 weakness categories
+3. Match best practices for the prompt type or requested mode
+4. Reconstruct it from scratch (avoiding artificial phases for direct tasks)
 5. Generate a changelog explaining every change
+
+### Advanced Options:
+- `--mode direct`: Single-block layout (Task/Context/Output/Constraints) without artificial multi-phase overhead.
+- `--mode system`: System prompt architecture (Role, Operating Rules, Tool Protocols, Output Contract).
+- `--mode structured`: JSON/Schema extraction prompts with strict field constraints.
+- `--target <model>`: Optimizes directly for a specific model (e.g. `gemini-3.8-flash`, `gpt-5`, `deepseek-v4-pro`) using its native guide.
+- `--with-examples`: Synthesizes 2-3 realistic input/output few-shot exemplars inside `<examples>`.
 
 ### Example
 
@@ -142,7 +149,7 @@ The optimization follows a 5-step algorithm:
 | Step | What happens |
 |------|-------------|
 | 1. Parse & Intent Extraction | Decomposes the prompt into 6 dimensions: goal, phases, scope, agent pattern, expected outputs, implicit assumptions |
-| 2. Weakness Analysis | Checks against 7 categories: context, output spec, sequencing, guardrails, success criteria, efficiency, subagent instructions |
+| 2. Weakness Analysis | Checks against 8 categories: context, output spec, sequencing, guardrails, success criteria, efficiency, subagent instructions, tool & schema quality |
 | 3. Best-Practice Matching | Classifies prompt type and selects applicable patterns |
 | 4. Prompt Reconstruction | Rebuilds from scratch with top-down structure and measurable criteria |
 | 5. Changelog Generation | Explains every change as a what->why pair |

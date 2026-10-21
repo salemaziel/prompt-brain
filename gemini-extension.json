@@ -1,6 +1,6 @@
 {
   "name": "prompt-brain",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "Optimize and migrate prompts — analyze weaknesses, apply best practices, and migrate prompts between models with changelogs.",
   "contextFileName": "CLAUDE.md"
 }
