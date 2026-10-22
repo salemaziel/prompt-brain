@@ -1,0 +1,41 @@
+{
+  "name": "prompt-brain",
+  "version": "0.9.0",
+  "description": "Analyze weaknesses, apply best practices, and migrate prompts across 75+ frontier and OSS models with detailed changelogs.",
+  "author": {
+    "name": "Tarek Steiß",
+    "email": "contact@tarek.codes",
+    "url": "https://tarek.codes"
+  },
+  "homepage": "https://github.com/tarekst/prompt-brain#readme",
+  "repository": "https://github.com/tarekst/prompt-brain",
+  "license": "MIT",
+  "keywords": [
+    "prompt",
+    "optimize",
+    "migrate",
+    "model",
+    "best-practices",
+    "changelog",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Prompt Brain",
+    "shortDescription": "Optimize and migrate prompts across models",
+    "longDescription": "Analyze weaknesses, apply best practices, and migrate prompts across 75+ frontier and OSS models with detailed changelogs.",
+    "developerName": "Tarek Steiß",
+    "category": "Productivity",
+    "capabilities": [
+      "Instructions"
+    ],
+    "websiteURL": "https://github.com/tarekst/prompt-brain#readme",
+    "defaultPrompt": [
+      "Optimize this prompt: ...",
+      "Migrate this prompt from gpt-4.1 to gpt-5: ..."
+    ],
+    "brandColor": "#8B5CF6",
+    "composerIcon": "./.claude-plugin/icon.png",
+    "logo": "./.claude-plugin/icon.png"
+  }
+}

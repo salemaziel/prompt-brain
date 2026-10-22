@@ -16,6 +16,7 @@ Target-aware prompt optimization, execution mode archetypes, tool/schema validat
 - **Tool & Schema Quality Analysis (Category H)**: Weakness analysis now audits tool-calling prompts for parameter typing, enums, required keys, error recovery, and failure fallbacks.
 - **Few-Shot Exemplar Generation**: `--with-examples` synthesizes 2-3 realistic input/output pairs in `<examples><example>...` tags.
 - **Model Guide Freshness & Schema Audit Tool**: `scripts/audit-model-guides.mjs` verifies schema compliance, canonical headings, and flags guides exceeding 150-day warning / 180-day staleness thresholds.
+- **Codex CLI Native Plugin Packaging**: Added `.codex-plugin/plugin.json` and `.agents/plugins/marketplace.json` establishing tri-platform compatibility across Claude Code, Antigravity CLI, and OpenAI Codex CLI.
 - **New Eval Cases**: Added `11-direct-single-task-mode` and `12-tool-schema-optimization` to test suite.
 
 ### Changed

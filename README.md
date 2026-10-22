@@ -42,6 +42,22 @@ For local development:
 claude --plugin-dir .
 ```
 
+### Codex CLI Installation
+
+Install into OpenAI Codex CLI using the local repository marketplace:
+
+```bash
+codex plugin marketplace add ./
+codex plugin add prompt-brain
+```
+
+Or enable it directly in `~/.codex/config.toml`:
+
+```toml
+[plugins."prompt-brain@personal"]
+enabled = true
+```
+
 ## Updating
 
 Auto-update is off by default for third-party marketplaces such as `tarek-plugins`, so a new
