@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-10-21
+
+Update author, owner and attribution to salemaziel across Claude Code, Codex, and marketplace manifests.
+
+### Changed
+
+- **Author Attribution**: Updated author and owner to `salemaziel` across `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, and `.claude-plugin/marketplace.json`.
+
 ## [0.9.1] - 2026-10-21
 
 Migration to salemaziel/prompt-brain fork, upstream remote tracking, and VDW marketplace integration.
@@ -261,6 +269,7 @@ Initial release of prompt-brain.
 - **Maximum effort mode** (`effort: max`) for full model capability
 - **User-invocable only** (`disable-model-invocation: true`) — the skill is never triggered automatically
 
+[0.9.2]: https://github.com/salemaziel/prompt-brain/compare/prompt-brain--v0.9.1...prompt-brain--v0.9.2
 [0.9.1]: https://github.com/salemaziel/prompt-brain/compare/prompt-brain--v0.9.0...prompt-brain--v0.9.1
 [0.9.0]: https://github.com/salemaziel/prompt-brain/compare/prompt-brain--v0.8.1...prompt-brain--v0.9.0
 [0.8.1]: https://github.com/salemaziel/prompt-brain/compare/prompt-brain--v0.8.0...prompt-brain--v0.8.1

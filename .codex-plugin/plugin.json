@@ -1,11 +1,11 @@
 {
   "name": "prompt-brain",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Analyze weaknesses, apply best practices, and migrate prompts across 75+ frontier and OSS models with detailed changelogs.",
   "author": {
-    "name": "Tarek Steiß",
-    "email": "contact@tarek.codes",
-    "url": "https://tarek.codes"
+    "name": "salemaziel",
+    "email": "invalid@invalid.com",
+    "url": "https://github.com/salemaziel"
   },
   "homepage": "https://github.com/salemaziel/prompt-brain#readme",
   "repository": "https://github.com/salemaziel/prompt-brain",
@@ -24,7 +24,7 @@
     "displayName": "Prompt Brain",
     "shortDescription": "Optimize and migrate prompts across models",
     "longDescription": "Analyze weaknesses, apply best practices, and migrate prompts across 75+ frontier and OSS models with detailed changelogs.",
-    "developerName": "Tarek Steiß",
+    "developerName": "salemaziel",
     "category": "Productivity",
     "capabilities": [
       "Instructions"

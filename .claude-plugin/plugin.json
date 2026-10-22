@@ -2,12 +2,12 @@
   "$schema": "https://www.schemastore.org/claude-code-plugin-manifest.json",
   "name": "prompt-brain",
   "displayName": "Prompt Brain",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Optimize and migrate prompts — analyze weaknesses, apply best practices, and migrate a prompt from one model to another, each with a changelog.",
   "author": {
-    "name": "Tarek Steiß",
-    "email": "contact@tarek.codes",
-    "url": "https://tarek.codes"
+    "name": "salemaziel",
+    "email": "invalid@invalid.com",
+    "url": "https://github.com/salemaziel"
   },
   "repository": "https://github.com/salemaziel/prompt-brain",
   "homepage": "https://github.com/salemaziel/prompt-brain#readme",

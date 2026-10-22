@@ -2,10 +2,13 @@
   "$schema": "https://www.schemastore.org/claude-code-marketplace.json",
   "name": "tarek-plugins",
   "owner": {
-    "name": "Tarek Steiß",
-    "email": "contact@tarek.codes"
+    "name": "salemaziel",
+    "email": "invalid@invalid.com"
   },
-  "description": "Tarek's Claude Code plugins.",
+  "metadata": {
+    "version": "0.9.2"
+  },
+  "description": "Claude Code plugins by salemaziel.",
   "plugins": [
     {
       "name": "prompt-brain",

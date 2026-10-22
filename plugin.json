@@ -1,5 +1,5 @@
 {
   "name": "prompt-brain",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Optimize and migrate prompts — analyze weaknesses, apply best practices, and migrate prompts between models with changelogs."
 }
