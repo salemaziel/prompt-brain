@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-10-21
+
+Migration to salemaziel/prompt-brain fork, upstream remote tracking, and VDW marketplace integration.
+
+### Added
+
+- **VDW Marketplace Entry**: Integrated into Via Del Web (`vdw`) plugin marketplace for distribution.
+- **Git Upstream Tracking**: Configured `upstream` remote pointing to `https://github.com/tarekst/prompt-brain.git`.
+
+### Changed
+
+- **Repository URLs**: Updated package manifests (`.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and `README.md`) to point to `salemaziel/prompt-brain`.
+
 ## [0.9.0] - 2026-10-21
 
 Target-aware prompt optimization, execution mode archetypes, tool/schema validation, and automated guide auditing.
@@ -248,13 +261,14 @@ Initial release of prompt-brain.
 - **Maximum effort mode** (`effort: max`) for full model capability
 - **User-invocable only** (`disable-model-invocation: true`) — the skill is never triggered automatically
 
-[0.9.0]: https://github.com/tarekst/prompt-brain/compare/prompt-brain--v0.8.1...prompt-brain--v0.9.0
-[0.8.1]: https://github.com/tarekst/prompt-brain/compare/prompt-brain--v0.8.0...prompt-brain--v0.8.1
-[0.8.0]: https://github.com/tarekst/prompt-brain/compare/prompt-brain--v0.7.0...prompt-brain--v0.8.0
-[0.7.0]: https://github.com/tarekst/prompt-brain/compare/prompt-brain--v0.6.0...prompt-brain--v0.7.0
-[0.6.0]: https://github.com/tarekst/prompt-brain/compare/8406af2e0d0cd4b8430f4ac9ccafebe9cdd7bddd...prompt-brain--v0.6.0
-[0.5.0]: https://github.com/tarekst/prompt-brain/compare/7eb45944b3afddb93017c795a4e3360d9383d442...8406af2e0d0cd4b8430f4ac9ccafebe9cdd7bddd
-[0.4.0]: https://github.com/tarekst/prompt-brain/compare/34f067cd1f128ccf5d2f49af2a829dc1e1009348...7eb45944b3afddb93017c795a4e3360d9383d442
-[0.3.0]: https://github.com/tarekst/prompt-brain/compare/6de9de501a25d4e2ebd55964e9b4d5f934fbb076...34f067cd1f128ccf5d2f49af2a829dc1e1009348
-[0.2.0]: https://github.com/tarekst/prompt-brain/compare/c64dca3b12f0bf265d557de3b9674dc9df0c6beb...6de9de501a25d4e2ebd55964e9b4d5f934fbb076
-[0.1.0]: https://github.com/tarekst/prompt-brain/commit/c64dca3b12f0bf265d557de3b9674dc9df0c6beb
+[0.9.1]: https://github.com/salemaziel/prompt-brain/compare/prompt-brain--v0.9.0...prompt-brain--v0.9.1
+[0.9.0]: https://github.com/salemaziel/prompt-brain/compare/prompt-brain--v0.8.1...prompt-brain--v0.9.0
+[0.8.1]: https://github.com/salemaziel/prompt-brain/compare/prompt-brain--v0.8.0...prompt-brain--v0.8.1
+[0.8.0]: https://github.com/salemaziel/prompt-brain/compare/prompt-brain--v0.7.0...prompt-brain--v0.8.0
+[0.7.0]: https://github.com/salemaziel/prompt-brain/compare/prompt-brain--v0.6.0...prompt-brain--v0.7.0
+[0.6.0]: https://github.com/salemaziel/prompt-brain/compare/8406af2e0d0cd4b8430f4ac9ccafebe9cdd7bddd...prompt-brain--v0.6.0
+[0.5.0]: https://github.com/salemaziel/prompt-brain/compare/7eb45944b3afddb93017c795a4e3360d9383d442...8406af2e0d0cd4b8430f4ac9ccafebe9cdd7bddd
+[0.4.0]: https://github.com/salemaziel/prompt-brain/compare/34f067cd1f128ccf5d2f49af2a829dc1e1009348...7eb45944b3afddb93017c795a4e3360d9383d442
+[0.3.0]: https://github.com/salemaziel/prompt-brain/compare/6de9de501a25d4e2ebd55964e9b4d5f934fbb076...34f067cd1f128ccf5d2f49af2a829dc1e1009348
+[0.2.0]: https://github.com/salemaziel/prompt-brain/compare/c64dca3b12f0bf265d557de3b9674dc9df0c6beb...6de9de501a25d4e2ebd55964e9b4d5f934fbb076
+[0.1.0]: https://github.com/salemaziel/prompt-brain/commit/c64dca3b12f0bf265d557de3b9674dc9df0c6beb

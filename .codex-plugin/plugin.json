@@ -1,14 +1,14 @@
 {
   "name": "prompt-brain",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Analyze weaknesses, apply best practices, and migrate prompts across 75+ frontier and OSS models with detailed changelogs.",
   "author": {
     "name": "Tarek Steiß",
     "email": "contact@tarek.codes",
     "url": "https://tarek.codes"
   },
-  "homepage": "https://github.com/tarekst/prompt-brain#readme",
-  "repository": "https://github.com/tarekst/prompt-brain",
+  "homepage": "https://github.com/salemaziel/prompt-brain#readme",
+  "repository": "https://github.com/salemaziel/prompt-brain",
   "license": "MIT",
   "keywords": [
     "prompt",
@@ -29,7 +29,7 @@
     "capabilities": [
       "Instructions"
     ],
-    "websiteURL": "https://github.com/tarekst/prompt-brain#readme",
+    "websiteURL": "https://github.com/salemaziel/prompt-brain#readme",
     "defaultPrompt": [
       "Optimize this prompt: ...",
       "Migrate this prompt from gpt-4.1 to gpt-5: ..."

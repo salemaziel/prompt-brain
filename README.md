@@ -4,13 +4,21 @@ A Claude Code plugin for working with prompts. **optimize-prompt** analyzes weak
 
 ## Installation
 
+### Recommended: Via Del Web (VDW) Marketplace
+
+```bash
+claude plugin install prompt-brain@vdw
+```
+
+### Standalone Marketplace (Fork)
+
 ```bash
 # Recommended: add the marketplace, then install
-claude plugin marketplace add tarekst/prompt-brain
+claude plugin marketplace add salemaziel/prompt-brain
 claude plugin install prompt-brain@tarek-plugins
 
 # Or in one step (Claude Code 2.1.292+):
-claude plugin install prompt-brain --marketplace tarekst/prompt-brain
+claude plugin install prompt-brain --marketplace salemaziel/prompt-brain
 ```
 
 A plugin installed from your shell loads in your next session, or after `/reload-plugins` in one
@@ -19,13 +27,13 @@ that is already open.
 Or from inside Claude Code:
 
 ```
-/plugin marketplace add tarekst/prompt-brain
+/plugin marketplace add salemaziel/prompt-brain
 /plugin install prompt-brain@tarek-plugins
 ```
 
 Inside a session, `/plugin install` opens the plugin's details rather than installing at once:
 choose a scope there to install. On Claude Code 2.1.275+ you can do both steps in one:
-`/plugin install prompt-brain --marketplace tarekst/prompt-brain` asks you to confirm adding the
+`/plugin install prompt-brain --marketplace salemaziel/prompt-brain` asks you to confirm adding the
 marketplace, then opens the same details.
 
 **Requirements:** Claude Code 2.1.280 or later. Both skills pin Claude Opus 5.5 through their
@@ -193,7 +201,7 @@ to it: the `$ARGUMENTS` and `${CLAUDE_EFFORT}`
 
 | Host | How to install | What works | What does not |
 |------|----------------|------------|---------------|
-| Claude Code | `/plugin install prompt-brain --marketplace tarekst/prompt-brain` (2.1.275+), or the two commands under [Installation](#installation) | Everything (Claude Code 2.1.280+) | -- |
+| Claude Code | `/plugin install prompt-brain --marketplace salemaziel/prompt-brain` (2.1.275+), `claude plugin install prompt-brain@vdw`, or the commands under [Installation](#installation) | Everything (Claude Code 2.1.280+) | -- |
 | [OpenCode](https://opencode.ai/docs/skills/) | Copy or symlink `skills/optimize-prompt/` and `skills/migrate-prompt/` into `.opencode/skills/`, `.claude/skills/` or `.agents/skills/` (or their global equivalents) | Skill body and lazy guide loading; through `metadata`, `/optimize-prompt` and `/migrate-prompt` as TUI commands and no model auto-selection; untested whether the Claude Code-only frontmatter keys are ignored (its docs do not say) | Does not install the plugin (its docs do not mention `.claude-plugin/` marketplaces); documents no `$ARGUMENTS` or `${CLAUDE_EFFORT}` substitution |
 | [Grok Build](https://docs.x.ai/build/features/skills-plugins-marketplaces) | Nothing extra once the plugin is installed in Claude Code -- Grok's docs say it reads Claude Code marketplaces and plugins with no setup (untested here); otherwise copy the skill directories into `.grok/skills/` or `~/.grok/skills/` | Honors `when-to-use`, `argument-hint`, `user-invocable`, `disable-model-invocation`; ignores extra keys | Accepts but ignores `model`, `effort`, `license`, `compatibility` |
 | claude.ai upload / Skills API | Not shipped -- would need a stripped copy of each skill | Only the six [spec fields](https://agentskills.io/specification) are accepted | The Claude Code-only keys are a [hard error](https://code.claude.com/docs/en/skills#using-skill-frontmatter-outside-claude-code), not ignored, so the skills do not upload as-is |
